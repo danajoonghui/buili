@@ -21,7 +21,7 @@ services:
     autoDeployTrigger: commit
     disk:
       name: buili-api-storage
-      mountPath: /var/data/buili
+      mountPath: /var/data
       sizeGB: 1
     envVars:
       - key: PYTHON_VERSION

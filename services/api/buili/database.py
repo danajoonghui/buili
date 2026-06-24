@@ -1,9 +1,12 @@
 from collections.abc import Generator
+import logging
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from .config import get_settings
+
+logger = logging.getLogger(__name__)
 
 
 class Base(DeclarativeBase):
@@ -34,8 +37,11 @@ def init_db() -> None:
     from . import models  # noqa: F401
 
     if engine.url.get_backend_name().startswith("postgresql"):
-        with engine.begin() as connection:
-            connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        try:
+            with engine.begin() as connection:
+                connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        except Exception as exc:
+            logger.warning("pgvector extension was not initialized; continuing with JSON embeddings: %s", exc)
     Base.metadata.create_all(bind=engine)
 
 

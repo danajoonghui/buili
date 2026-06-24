@@ -60,3 +60,10 @@ For a production deployment, set the optional API environment variables in the R
 - `BUILI_R2_ACCOUNT_ID`, `BUILI_R2_ACCESS_KEY_ID`, `BUILI_R2_SECRET_ACCESS_KEY`, and `BUILI_R2_BUCKET` if object storage is wired in
 
 Render free web services are suitable for demos, but production file persistence requires the API service disk in the Blueprint. Render persistent disks require a paid service instance, so `buili-api` uses the `starter` plan.
+
+Manual Render API service disk settings:
+
+- Disk name: `buili-api-storage`
+- Mount path: `/var/data`
+- Size: `1 GB`
+- Environment variable: `BUILI_STORAGE_ROOT=/var/data/buili/storage`

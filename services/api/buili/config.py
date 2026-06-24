@@ -1,7 +1,10 @@
 from functools import lru_cache
+import logging
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+logger = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
@@ -32,5 +35,15 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     settings = Settings()
-    settings.storage_root.mkdir(parents=True, exist_ok=True)
+    try:
+        settings.storage_root.mkdir(parents=True, exist_ok=True)
+    except PermissionError:
+        fallback = Path("/tmp/buili/storage")
+        fallback.mkdir(parents=True, exist_ok=True)
+        logger.warning(
+            "BUILI_STORAGE_ROOT=%s is not writable; using ephemeral fallback %s",
+            settings.storage_root,
+            fallback,
+        )
+        settings.storage_root = fallback
     return settings
