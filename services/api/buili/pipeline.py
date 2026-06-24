@@ -186,7 +186,10 @@ def _read_xlsx_text(path: Path) -> str:
 def parse_document(doc: Document) -> list[ParsedPage]:
     path = object_path(doc.r2_key)
     if not path.exists():
-        raise FileNotFoundError(f"uploaded document not found: {doc.filename}")
+        if doc.filename.startswith(("demo-electrical-plan", "cooper-residence")):
+            path.write_text(_demo_plan_text(), encoding="utf-8")
+        else:
+            raise FileNotFoundError(f"uploaded document not found: {doc.filename}")
 
     suffix = path.suffix.lower()
     if suffix in {".txt", ".md", ".csv"}:
@@ -256,6 +259,51 @@ def _demo_plan_text() -> str:
         "GFCI weatherproof outlets at exterior locations, and 200 amp service coordination.\n"
         "Verify device coverage and switching before rough-in signoff."
     )
+
+
+def _ensure_demo_assets(project: Project, session: Session) -> None:
+    demo_text = _demo_plan_text()
+    docs = session.scalars(select(Document).where(Document.project_id == project.project_id)).all()
+    if docs:
+        for doc in docs:
+            if doc.filename.startswith(("demo-electrical-plan", "cooper-residence")):
+                path = object_path(doc.r2_key)
+                if not path.exists():
+                    path.write_text(demo_text, encoding="utf-8")
+                if doc.filename == "demo-electrical-plan.pdf":
+                    doc.filename = "cooper-residence-e11-electrical-plan.txt"
+                    doc.mime = "text/plain"
+                    doc.revision = "E1.1"
+    else:
+        doc = Document(
+            project_id=project.project_id,
+            type="plan",
+            filename="cooper-residence-e11-electrical-plan.txt",
+            mime="text/plain",
+            r2_key=f"org/{project.org_id}/project/{project.project_id}/raw/demo-electrical-plan.txt",
+            hash=_hash_json({"demo": True, "text": demo_text}),
+            revision="E1.1",
+            parsed_status="uploaded",
+            size=len(demo_text.encode("utf-8")),
+        )
+        object_path(doc.r2_key).write_text(demo_text, encoding="utf-8")
+        session.add(doc)
+
+    has_media = session.scalars(
+        select(SiteMedia).where(SiteMedia.project_id == project.project_id).limit(1)
+    ).first()
+    if not has_media:
+        session.add(
+            SiteMedia(
+                project_id=project.project_id,
+                filename="construction-site-electrical-work.jpg",
+                mime="image/jpeg",
+                r2_key="asset://site-media/construction-site-electrical-work.jpg",
+                hash=_hash_json({"asset": "construction-site-electrical-work.jpg"}),
+                metadata_json={"source": "bundled_public_sample", "role": "field_photo"},
+            )
+        )
+    session.commit()
 
 
 def _chunk_text(text: str, page_no: int) -> list[tuple[str, dict[str, Any]]]:
@@ -592,6 +640,10 @@ def _issue_candidates(project: Project, session: Session) -> list[Issue]:
 def ensure_demo_project(session: Session) -> Project:
     project = session.scalars(select(Project).limit(1)).first()
     if project:
+        _ensure_demo_assets(project, session)
+        if not session.scalars(select(Issue).where(Issue.project_id == project.project_id).limit(1)).first():
+            job = create_job_for_project(project, session)
+            run_analysis_job(job.job_id, session)
         return project
 
     from .models import Organization
@@ -610,10 +662,11 @@ def ensure_demo_project(session: Session) -> Project:
     doc = Document(
         project_id=project.project_id,
         type="plan",
-        filename="demo-electrical-plan.pdf",
-        mime="application/pdf",
-        r2_key=f"org/{org.org_id}/project/{project.project_id}/raw/demo-plan.txt",
+        filename="cooper-residence-e11-electrical-plan.txt",
+        mime="text/plain",
+        r2_key=f"org/{org.org_id}/project/{project.project_id}/raw/demo-electrical-plan.txt",
         hash=_hash_json({"demo": True}),
+        revision="E1.1",
         parsed_status="uploaded",
         size=len(_demo_plan_text()),
     )
@@ -621,6 +674,9 @@ def ensure_demo_project(session: Session) -> Project:
     path.write_text(_demo_plan_text(), encoding="utf-8")
     session.add(doc)
     session.commit()
+    _ensure_demo_assets(project, session)
+    job = create_job_for_project(project, session)
+    run_analysis_job(job.job_id, session)
     return project
 
 

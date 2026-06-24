@@ -308,6 +308,7 @@
         margin-top: 28px;
       }
       .plan-box img,
+      .plan-canvas img,
       .field-stage img {
         width: 100%;
         display: block;
@@ -354,6 +355,7 @@
         border: 2px solid var(--signal);
       }
       .recognition-list article,
+      .evidence-links div,
       .asset-list div,
       .tech article,
       .report-preview article,
@@ -364,6 +366,12 @@
       .recognition-list {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+      .evidence-links {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 12px;
         margin-top: 18px;
       }
@@ -398,6 +406,19 @@
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 18px;
         margin-bottom: 18px;
+      }
+      .report-preview span,
+      .recognition-list small,
+      .evidence-links span,
+      .tech span,
+      .pipeline-events span {
+        display: block;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: .11em;
+        font-size: 12px;
+        font-weight: 800;
+        margin-bottom: 6px;
       }
       .report-actions {
         display: flex;
@@ -437,13 +458,15 @@
       .tech article.ready {
         border-top: 3px solid var(--signal);
       }
-      .job-log {
+      .pipeline-events {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
         background: var(--concrete);
         border: 1px solid var(--line);
         padding: 16px;
-        overflow: auto;
-        max-height: 360px;
       }
+      .pipeline-events div { padding: 8px 0; }
       .bottom {
         display: none;
       }
@@ -463,7 +486,7 @@
         .detail { grid-template-columns: 1fr; }
         .detail div { border-right: 0; border-bottom: 1px solid var(--line); }
         .evidence-block { grid-template-columns: 1fr; gap: 8px; }
-        .recognition-list, .asset-list, .report-preview, .tech, .pipeline-steps {
+        .recognition-list, .evidence-links, .asset-list, .report-preview, .tech, .pipeline-steps, .pipeline-events {
           grid-template-columns: 1fr;
         }
         .bottom {
@@ -562,6 +585,7 @@
               <div class="section-row"><h2>Evidence</h2><span id="assetCount">0 docs · 0 media</span></div>
               <div class="field-stage"><img src="/site-media/construction-site-electrical-work.jpg" alt="Field electrical work" /><span class="marker"></span></div>
               <div class="recognition-list" id="recognitions"></div>
+              <div class="evidence-links" id="evidenceLinks"></div>
               <div class="asset-list" id="assets"></div>
             </section>
             <section>
@@ -594,7 +618,7 @@
           <div class="section-row"><h2>Pipeline</h2><span>/api</span></div>
           <div class="pipeline-steps" id="steps"></div>
           <div class="tech" id="tech"></div>
-          <pre class="job-log" id="jobLog"></pre>
+          <div class="pipeline-events" id="jobLog"></div>
         </section>
       </section>
       <nav class="bottom">
@@ -777,6 +801,9 @@
         $("recognitions").innerHTML = observations.slice(0, 5).map((item) => `
           <article><strong>${esc(item.object_type).replaceAll("_", " ")}</strong><p>${esc(item.text)}</p><small>media ${esc(item.media_id)} · confidence ${pct(item.confidence)}%</small></article>
         `).join("");
+        $("evidenceLinks").innerHTML = (issue?.evidence || []).slice(0, 6).map((item) => `
+          <div><span>${esc(item.evidence_type).replaceAll("_", " ")}</span><strong>${esc(item.label || item.ref_id)}</strong><small>${esc(item.r2_key)} · page ${esc(item.page || "-")}</small></div>
+        `).join("");
         $("assets").innerHTML = [
           ...state.documents.slice(0, 3).map((item) => `<div><span>${esc(item.type)}</span><strong>${esc(item.filename)}</strong><small>${esc(item.parsed_status)} · rev ${esc(item.revision)}</small></div>`),
           ...state.media.slice(0, 3).map((item) => `<div><span>media</span><strong>${esc(item.filename)}</strong><small>${esc(item.mime)}</small></div>`)
@@ -808,7 +835,10 @@
         $("tech").innerHTML = state.tech.map((item) => `
           <article class="${item.status === "ready" ? "ready" : ""}"><span>${esc(item.status).replaceAll("_", " ")}</span><strong>${esc(item.label)}</strong><p>${esc(item.summary)}</p><small>${item.evidence_count} evidence records</small></article>
         `).join("");
-        $("jobLog").textContent = JSON.stringify(state.job || { state: "idle", progress: 0 }, null, 2);
+        const events = (state.job?.events || []).slice(-6);
+        $("jobLog").innerHTML = events.length ? events.map((event) => `
+          <div><span>${esc(event.state || "event")}</span><strong>${esc(event.event || "pipeline")}</strong><p>${esc(event.progress || 0)}% complete</p></div>
+        `).join("") : `<div><span>idle</span><strong>No run yet</strong><p>Run review to start the analysis pipeline.</p></div>`;
       }
       function buildRfi(issue) {
         return [`# RFI Draft: ${issue.title}`, "", `Location: ${issue.room}`, "", `Contract requirement: ${issue.requirement?.text || ""}`, "", `Field observation: ${issue.observation?.text || ""}`, "", `Question: ${issue.rfi_draft || ""}`, "", "PM review required before sending."].join("\n");
