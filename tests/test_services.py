@@ -12,6 +12,21 @@ def test_api_healthz() -> None:
     assert response.json()["service"] == "buili-api"
 
 
+def test_api_root_serves_buili_app() -> None:
+    client = TestClient(api_app)
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert "Buili" in response.text
+
+
+def test_api_prefix_alias_supports_single_render_domain() -> None:
+    client = TestClient(api_app)
+    response = client.get("/api/healthz")
+    assert response.status_code == 200
+    assert response.json()["service"] == "buili-api"
+
+
 def test_model_gateway_forces_gpu_7() -> None:
     client = TestClient(model_app)
     response = client.get("/healthz")

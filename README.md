@@ -67,3 +67,7 @@ Manual Render API service disk settings:
 - Mount path: `/var/data`
 - Size: `1 GB`
 - Environment variable: `BUILI_STORAGE_ROOT=/var/data/buili/storage`
+
+Single-domain Render mode is supported: if the Python API service owns a domain such as
+`https://buili.onrender.com`, `GET /` serves the Buili web UI and `/api/*` is accepted as an alias
+for the FastAPI routes. This lets uploads and report downloads work with `BUILI_PUBLIC_BASE_URL=/api`.

@@ -5,9 +5,10 @@ from pathlib import Path
 from collections.abc import AsyncIterator
 
 import uvicorn
-from fastapi import BackgroundTasks, Depends, FastAPI, File, HTTPException, UploadFile
+from fastapi import BackgroundTasks, Depends, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
@@ -56,6 +57,9 @@ from .schemas import (
 from .storage import file_sha256, object_path, save_upload
 
 settings = get_settings()
+REPO_ROOT = Path(__file__).resolve().parents[3]
+WEB_PUBLIC_ROOT = REPO_ROOT / "apps" / "web" / "public"
+API_STATIC_ROOT = Path(__file__).resolve().parent / "static"
 
 DOCUMENT_EXTENSIONS = {".pdf", ".txt", ".md", ".csv", ".docx", ".xlsx"}
 MEDIA_EXTENSIONS = {
@@ -113,6 +117,43 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+if (WEB_PUBLIC_ROOT / "plans").exists():
+    app.mount("/plans", StaticFiles(directory=WEB_PUBLIC_ROOT / "plans"), name="plans")
+if (WEB_PUBLIC_ROOT / "site-media").exists():
+    app.mount("/site-media", StaticFiles(directory=WEB_PUBLIC_ROOT / "site-media"), name="site-media")
+
+
+@app.middleware("http")
+async def accept_api_prefix(request: Request, call_next):
+    if request.scope["path"].startswith("/api/"):
+        request.scope["path"] = request.scope["path"][4:]
+    return await call_next(request)
+
+
+@app.get("/", include_in_schema=False)
+def web_root() -> FileResponse:
+    return FileResponse(API_STATIC_ROOT / "index.html")
+
+
+@app.get("/manifest.webmanifest", include_in_schema=False)
+def web_manifest() -> FileResponse:
+    return FileResponse(WEB_PUBLIC_ROOT / "manifest.webmanifest", media_type="application/manifest+json")
+
+
+@app.get("/sw.js", include_in_schema=False)
+def service_worker() -> FileResponse:
+    return FileResponse(WEB_PUBLIC_ROOT / "sw.js", media_type="application/javascript")
+
+
+@app.get("/buili_favicon_transparent.png", include_in_schema=False)
+def favicon_png() -> FileResponse:
+    return FileResponse(WEB_PUBLIC_ROOT / "buili_favicon_transparent.png", media_type="image/png")
+
+
+@app.get("/icon.svg", include_in_schema=False)
+def icon_svg() -> FileResponse:
+    return FileResponse(WEB_PUBLIC_ROOT / "icon.svg", media_type="image/svg+xml")
 
 
 @app.get("/healthz")

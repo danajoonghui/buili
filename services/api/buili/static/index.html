@@ -1,0 +1,921 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/buili_favicon_transparent.png" />
+    <title>Buili</title>
+    <style>
+      :root {
+        --ink: #2f2f2c;
+        --muted: #6f736f;
+        --line: #deded9;
+        --paper: #ffffff;
+        --concrete: #f4f4f1;
+        --signal: #218a48;
+        --warn: #c98222;
+        --danger: #cf4d3f;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 16px;
+      }
+      button, input, select, textarea {
+        font: inherit;
+        color: inherit;
+      }
+      button {
+        border: 1px solid #bdbdb8;
+        background: #fff;
+        min-height: 38px;
+        padding: 8px 13px;
+        cursor: pointer;
+      }
+      button.primary {
+        background: var(--ink);
+        color: #fff;
+        border-color: var(--ink);
+      }
+      button.approve { border-color: #98c7a4; color: var(--signal); }
+      button.reject { border-color: #e3b1aa; color: var(--danger); }
+      .shell {
+        display: grid;
+        grid-template-columns: 212px minmax(0, 1fr);
+        min-height: 100vh;
+      }
+      .side {
+        border-right: 1px solid var(--line);
+        padding: 28px 14px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 0;
+        padding: 0 10px 28px;
+        background: transparent;
+        font-weight: 800;
+      }
+      .brand img { width: 24px; height: 24px; }
+      .nav button {
+        width: 100%;
+        border: 0;
+        border-left: 2px solid transparent;
+        background: transparent;
+        text-align: left;
+        margin: 4px 0;
+      }
+      .nav button.active {
+        border-left-color: var(--signal);
+        font-weight: 800;
+      }
+      .workbench {
+        padding: 28px 34px 80px;
+        max-width: 1240px;
+      }
+      .top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .eyebrow {
+        color: var(--signal);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: .18em;
+        font-weight: 800;
+        margin: 0 0 6px;
+      }
+      h1 {
+        font-size: 40px;
+        line-height: 1;
+        margin: 0 0 10px;
+      }
+      h2 {
+        font-size: 19px;
+        margin: 0;
+      }
+      h3 {
+        font-size: 17px;
+        margin: 0 0 8px;
+      }
+      p { line-height: 1.48; }
+      .subtle { color: var(--muted); }
+      .top-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .project-strip {
+        display: grid;
+        grid-template-columns: 280px minmax(180px, 1fr) minmax(160px, 1fr) auto auto;
+        gap: 10px;
+        align-items: center;
+        margin: 26px 0;
+      }
+      .project-strip label {
+        text-transform: uppercase;
+        font-size: 12px;
+        letter-spacing: .14em;
+        font-weight: 800;
+        color: var(--muted);
+      }
+      .project-select {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        gap: 10px;
+      }
+      select, input, textarea {
+        width: 100%;
+        border: 1px solid #bdbdb8;
+        background: #fff;
+        min-height: 38px;
+        padding: 8px 10px;
+      }
+      .kpis {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        border: 1px solid var(--line);
+        margin-bottom: 24px;
+      }
+      .kpi {
+        padding: 14px 14px;
+        border-right: 1px solid var(--line);
+      }
+      .kpi:last-child { border-right: 0; }
+      .kpi span {
+        display: block;
+        color: var(--muted);
+        text-transform: uppercase;
+        font-size: 12px;
+        letter-spacing: .1em;
+        font-weight: 800;
+      }
+      .kpi strong {
+        display: block;
+        font-size: 23px;
+        margin-top: 8px;
+      }
+      .notice {
+        min-height: 22px;
+        margin: -10px 0 16px;
+        color: var(--signal);
+        font-weight: 700;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 340px minmax(360px, 1fr) 286px;
+        gap: 32px;
+      }
+      .section-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 28px;
+      }
+      .tabs button {
+        text-transform: uppercase;
+        font-size: 12px;
+        letter-spacing: .1em;
+        font-weight: 800;
+      }
+      .tabs .active {
+        background: var(--ink);
+        color: #fff;
+        border-color: var(--ink);
+      }
+      .issue-group {
+        margin-bottom: 28px;
+      }
+      .group-label {
+        margin: 0 0 10px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: .15em;
+        font-size: 12px;
+        font-weight: 800;
+      }
+      .issue-row {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 18px;
+        width: 100%;
+        border: 0;
+        border-left: 3px solid var(--warn);
+        background: #fff;
+        text-align: left;
+        padding: 13px 16px;
+        margin-bottom: 10px;
+      }
+      .issue-row.selected {
+        background: #edf6ef;
+      }
+      .issue-row.minor { border-left-color: #42a363; }
+      .issue-row.informational { border-left-color: #777; }
+      .issue-type {
+        display: block;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: .13em;
+        font-size: 12px;
+        font-weight: 800;
+        margin-bottom: 5px;
+      }
+      .issue-row strong {
+        display: block;
+        font-size: 18px;
+        line-height: 1.2;
+      }
+      .issue-row small {
+        display: block;
+        color: var(--muted);
+        margin-top: 5px;
+      }
+      .confidence {
+        font-size: 18px;
+        font-weight: 800;
+        padding-right: 24px;
+      }
+      .inspector-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        border-left: 3px solid #aaa;
+        padding-left: 14px;
+        margin-bottom: 16px;
+      }
+      .inspector-head h2 {
+        font-size: 28px;
+        line-height: 1.12;
+      }
+      .status {
+        text-transform: uppercase;
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: .11em;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+      .detail {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        background: var(--concrete);
+        margin: 18px 0;
+      }
+      .detail div {
+        padding: 14px 12px;
+        border-right: 1px solid var(--line);
+      }
+      .detail div:last-child { border-right: 0; }
+      .detail span, .evidence-block span, .asset-list span {
+        display: block;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: .12em;
+        font-size: 12px;
+        font-weight: 800;
+        margin-bottom: 6px;
+      }
+      .evidence-block {
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        gap: 28px;
+        margin: 22px 0;
+      }
+      .evidence-block p { margin: 0; font-size: 19px; }
+      .evidence-block small { color: var(--muted); display: block; margin-top: 12px; }
+      .actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 28px;
+      }
+      .plan-box img,
+      .field-stage img {
+        width: 100%;
+        display: block;
+        border: 1px solid #bdbdb8;
+      }
+      .snapshot {
+        background: var(--concrete);
+        margin-top: 10px;
+      }
+      .snapshot div {
+        display: flex;
+        justify-content: space-between;
+        padding: 11px 10px;
+        border-bottom: 1px solid var(--line);
+      }
+      .snapshot div:last-child { border-bottom: 0; }
+      .snapshot span {
+        color: var(--muted);
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: .1em;
+        font-weight: 800;
+      }
+      .panel {
+        display: none;
+      }
+      .panel.active {
+        display: block;
+      }
+      .two-col {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 420px;
+        gap: 32px;
+      }
+      .field-stage {
+        position: relative;
+      }
+      .marker {
+        position: absolute;
+        left: 36%;
+        top: 38%;
+        width: 26%;
+        height: 22%;
+        border: 2px solid var(--signal);
+      }
+      .recognition-list article,
+      .asset-list div,
+      .tech article,
+      .report-preview article,
+      .rag-results article {
+        border-left: 1px solid var(--line);
+        padding: 13px 14px;
+      }
+      .recognition-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+      .asset-list {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+      .rag-results {
+        display: grid;
+        gap: 12px;
+        margin-top: 14px;
+      }
+      .plan-canvas {
+        position: relative;
+        max-width: 980px;
+      }
+      .pin {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        margin: -5px 0 0 -5px;
+        background: var(--warn);
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 1px #777;
+      }
+      .pin.minor { background: var(--signal); }
+      .pin.informational { background: #777; }
+      .report-preview {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+        margin-bottom: 18px;
+      }
+      .report-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+      .rfi-output {
+        min-height: 260px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      .pipeline-steps {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        border-top: 3px solid var(--signal);
+        margin-bottom: 18px;
+      }
+      .pipeline-steps div {
+        padding: 12px 10px;
+        border-right: 1px solid var(--line);
+      }
+      .pipeline-steps div:last-child { border-right: 0; }
+      .pipeline-steps span {
+        display: block;
+        color: var(--signal);
+        font-size: 18px;
+        font-weight: 800;
+        margin-bottom: 8px;
+      }
+      .tech {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 0;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+      }
+      .tech article.ready {
+        border-top: 3px solid var(--signal);
+      }
+      .job-log {
+        background: var(--concrete);
+        border: 1px solid var(--line);
+        padding: 16px;
+        overflow: auto;
+        max-height: 360px;
+      }
+      .bottom {
+        display: none;
+      }
+      .hidden { display: none !important; }
+      @media (max-width: 900px) {
+        .shell { display: block; }
+        .side { display: none; }
+        .workbench { padding: 18px 14px 92px; }
+        .top { display: block; }
+        h1 { font-size: 32px; }
+        .top-actions { justify-content: flex-start; margin-top: 14px; }
+        .project-strip { grid-template-columns: 1fr; }
+        .project-select { grid-template-columns: 1fr; }
+        .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .kpi:nth-child(2) { border-right: 0; }
+        .grid, .two-col { grid-template-columns: 1fr; }
+        .detail { grid-template-columns: 1fr; }
+        .detail div { border-right: 0; border-bottom: 1px solid var(--line); }
+        .evidence-block { grid-template-columns: 1fr; gap: 8px; }
+        .recognition-list, .asset-list, .report-preview, .tech, .pipeline-steps {
+          grid-template-columns: 1fr;
+        }
+        .bottom {
+          position: fixed;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 30;
+          display: grid;
+          grid-template-columns: repeat(5, 1fr);
+          background: #fff;
+          border-top: 1px solid var(--line);
+        }
+        .bottom button {
+          border: 0;
+          border-top: 3px solid transparent;
+          min-height: 58px;
+          font-size: 12px;
+          padding: 6px 4px;
+        }
+        .bottom .active {
+          border-top-color: var(--signal);
+          color: var(--ink);
+          font-weight: 800;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <aside class="side">
+        <button class="brand" data-view="issues"><img src="/buili_favicon_transparent.png" alt="" /><span>Buili</span></button>
+        <nav class="nav">
+          <button class="active" data-view="issues">Issues</button>
+          <button data-view="evidence">Evidence</button>
+          <button data-view="plan">Plan</button>
+          <button data-view="reports">Reports</button>
+          <button data-view="pipeline">Pipeline</button>
+        </nav>
+      </aside>
+      <section class="workbench">
+        <header class="top">
+          <div>
+            <p class="eyebrow">Field to report</p>
+            <h1>Buili</h1>
+            <p class="subtle">Issue inbox, evidence chain, RFI, punch list, and CO support.</p>
+          </div>
+          <div class="top-actions">
+            <button id="installBtn">Install</button>
+            <button class="primary" id="runBtn">Run review</button>
+          </div>
+        </header>
+        <section class="project-strip">
+          <div class="project-select">
+            <label for="projectSelect">Project</label>
+            <select id="projectSelect"></select>
+          </div>
+          <input id="newName" placeholder="New project name" />
+          <input id="newAddress" placeholder="Address" />
+          <button id="addProjectBtn">Add</button>
+          <button id="uploadBtn">Upload</button>
+          <input id="fileInput" class="hidden" type="file" accept=".pdf,.docx,.txt,.csv,.xlsx,image/*,video/*,audio/*" />
+        </section>
+        <p class="notice" id="notice"></p>
+        <section class="kpis">
+          <div class="kpi"><span>Issues ready</span><strong id="kpiIssues">0</strong></div>
+          <div class="kpi"><span>Action needed</span><strong id="kpiAction">0</strong></div>
+          <div class="kpi"><span>Evidence score</span><strong id="kpiEvidence">0%</strong></div>
+          <div class="kpi"><span>Job</span><strong id="kpiJob">idle</strong></div>
+        </section>
+
+        <section id="panelIssues" class="panel active">
+          <div class="grid">
+            <section>
+              <div class="section-row"><h2>Issue inbox</h2><span id="shownCount">0 shown</span></div>
+              <div class="tabs">
+                <button class="active" data-filter="all">All <span id="countAll">0</span></button>
+                <button data-filter="blocker">Blocker <span id="countBlocker">0</span></button>
+                <button data-filter="electrical">Elec <span id="countElec">0</span></button>
+                <button data-filter="mechanical">Mech <span id="countMech">0</span></button>
+              </div>
+              <div id="issueList"></div>
+            </section>
+            <section id="inspector"></section>
+            <aside>
+              <div class="section-row"><h2>Plan trace</h2><span id="pinCount">0 pins</span></div>
+              <div class="plan-box"><img src="/plans/utah-e11-electrical-plan.jpg" alt="E1.1 electrical plan" /></div>
+              <div class="snapshot" id="snapshot"></div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="panelEvidence" class="panel">
+          <div class="two-col">
+            <section>
+              <div class="section-row"><h2>Evidence</h2><span id="assetCount">0 docs · 0 media</span></div>
+              <div class="field-stage"><img src="/site-media/construction-site-electrical-work.jpg" alt="Field electrical work" /><span class="marker"></span></div>
+              <div class="recognition-list" id="recognitions"></div>
+              <div class="asset-list" id="assets"></div>
+            </section>
+            <section>
+              <div class="section-row"><h2>Citations</h2><button id="searchBtn">Search</button></div>
+              <textarea id="ragQuery">AFCI GFCI smoke detector outlet electrical plan</textarea>
+              <div class="rag-results" id="ragResults"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="panelPlan" class="panel">
+          <div class="section-row"><h2>Drawing overlay</h2><span id="overlayCount">0 issue pins</span></div>
+          <div class="plan-canvas" id="planCanvas">
+            <img src="/plans/utah-e11-electrical-plan.jpg" alt="E1.1 electrical plan" />
+          </div>
+        </section>
+
+        <section id="panelReports" class="panel">
+          <div class="report-preview" id="reportPreview"></div>
+          <div class="report-actions">
+            <button class="primary" data-report="punch:pdf">Punch PDF</button>
+            <button data-report="punch:csv">Punch CSV</button>
+            <button data-report="co_evidence:pdf">CO Evidence</button>
+          </div>
+          <p id="reportLink"></p>
+          <textarea class="rfi-output" id="rfiOutput" readonly></textarea>
+        </section>
+
+        <section id="panelPipeline" class="panel">
+          <div class="section-row"><h2>Pipeline</h2><span>/api</span></div>
+          <div class="pipeline-steps" id="steps"></div>
+          <div class="tech" id="tech"></div>
+          <pre class="job-log" id="jobLog"></pre>
+        </section>
+      </section>
+      <nav class="bottom">
+        <button class="active" data-view="issues">Issues</button>
+        <button data-view="evidence">Evidence</button>
+        <button data-view="plan">Plan</button>
+        <button data-view="reports">Reports</button>
+        <button data-view="pipeline">Pipeline</button>
+      </nav>
+    </main>
+
+    <script>
+      const API = "/api";
+      const state = {
+        view: "issues",
+        filter: "all",
+        projects: [],
+        project: null,
+        issues: [],
+        overlay: null,
+        documents: [],
+        media: [],
+        observations: [],
+        tech: [],
+        job: null,
+        selectedId: "",
+        deferredPrompt: null,
+        autoRan: new Set()
+      };
+      const $ = (id) => document.getElementById(id);
+      const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+      const pct = (value) => Math.round(Number(value || 0) * 100);
+      const avg = (items) => items.length ? items.reduce((sum, issue) => sum + Number(issue.confidence || 0), 0) / items.length : 0;
+      async function request(path, options = {}) {
+        const init = { ...options, headers: { ...(options.headers || {}) } };
+        if (init.body && !(init.body instanceof FormData)) {
+          init.headers["Content-Type"] = "application/json";
+        }
+        const response = await fetch(`${API}${path}`, init);
+        if (!response.ok) throw new Error(`${response.status} ${await response.text()}`);
+        const type = response.headers.get("content-type") || "";
+        return type.includes("application/json") ? response.json() : response.text();
+      }
+      function notice(text) { $("notice").textContent = text || ""; }
+      function selectedIssue() {
+        return state.issues.find((issue) => issue.issue_id === state.selectedId) || state.issues[0] || null;
+      }
+      async function loadProjects() {
+        state.projects = await request("/v1/projects");
+        state.project = state.projects.find((item) => item.name.includes("Cooper")) || state.projects[0] || null;
+        renderProjectSelect();
+        if (state.project) await loadProject(state.project.project_id);
+      }
+      async function loadProject(projectId) {
+        const [issues, overlay, job, documents, media, observations, tech] = await Promise.all([
+          request(`/v1/projects/${projectId}/issues`),
+          request(`/v1/projects/${projectId}/plan-overlay`),
+          request(`/v1/projects/${projectId}/jobs/latest`).catch(() => null),
+          request(`/v1/projects/${projectId}/documents`),
+          request(`/v1/projects/${projectId}/media`),
+          request(`/v1/projects/${projectId}/observations`),
+          request(`/v1/projects/${projectId}/technology-status`)
+        ]);
+        state.issues = issues;
+        state.overlay = overlay;
+        state.job = job;
+        state.documents = documents;
+        state.media = media;
+        state.observations = observations;
+        state.tech = tech;
+        if (!state.issues.some((issue) => issue.issue_id === state.selectedId)) {
+          state.selectedId = state.issues[0]?.issue_id || "";
+        }
+        render();
+        if (!state.issues.length && state.documents.length && !state.autoRan.has(projectId)) {
+          state.autoRan.add(projectId);
+          await runReview("Preparing the first review run...");
+        }
+      }
+      function renderProjectSelect() {
+        $("projectSelect").innerHTML = state.projects.map((project) => `<option value="${esc(project.project_id)}">${esc(project.name)}</option>`).join("");
+        if (state.project) $("projectSelect").value = state.project.project_id;
+      }
+      function render() {
+        const issue = selectedIssue();
+        $("kpiIssues").textContent = state.issues.filter((item) => item.status === "review_ready").length;
+        $("kpiAction").textContent = state.issues.filter((item) => item.status === "review_ready" && Number(item.confidence) >= .55).length;
+        $("kpiEvidence").textContent = `${pct(avg(state.issues))}%`;
+        $("kpiJob").textContent = state.job ? `${state.job.progress}%` : "idle";
+        $("shownCount").textContent = `${filteredIssues().length} shown`;
+        $("countAll").textContent = state.issues.length;
+        $("countBlocker").textContent = state.issues.filter((item) => item.severity === "blocker").length;
+        $("countElec").textContent = state.issues.filter((item) => item.discipline === "electrical").length;
+        $("countMech").textContent = state.issues.filter((item) => item.discipline === "mechanical").length;
+        renderIssues();
+        renderInspector(issue);
+        renderSnapshot(issue);
+        renderEvidence(issue);
+        renderPlan();
+        renderReports(issue);
+        renderPipeline();
+      }
+      function filteredIssues() {
+        return state.issues.filter((issue) => {
+          if (state.filter === "all") return true;
+          if (state.filter === "blocker") return issue.severity === "blocker";
+          return issue.discipline === state.filter;
+        });
+      }
+      function renderIssues() {
+        const groups = [
+          ["blocker", "Blocker - Needs Review"],
+          ["major", "Major - Awaiting Verification"],
+          ["minor", "Minor - Informational"],
+          ["informational", "Informational"]
+        ];
+        $("issueList").innerHTML = groups.map(([severity, label]) => {
+          const items = filteredIssues().filter((issue) => issue.severity === severity);
+          if (!items.length) return "";
+          return `<section class="issue-group"><p class="group-label">${label}</p>${items.map((issue) => `
+            <button class="issue-row ${esc(issue.severity)} ${issue.issue_id === state.selectedId ? "selected" : ""}" data-issue="${esc(issue.issue_id)}">
+              <span>
+                <span class="issue-type">${esc(issue.type).replaceAll("_", " ")} · ${esc(issue.discipline)}</span>
+                <strong>${esc(issue.title)}</strong>
+                <small>${esc(issue.room)} · ${esc(issue.requirement?.source || "source pending")}</small>
+              </span>
+              <span class="confidence">${pct(issue.confidence)}%</span>
+            </button>`).join("")}</section>`;
+        }).join("") || `<p class="subtle">No issue candidates yet. Run review to generate the first inbox.</p>`;
+      }
+      function renderInspector(issue) {
+        if (!issue) {
+          $("inspector").innerHTML = `<h2>No issue selected</h2><p class="subtle">Run review to generate issue candidates.</p>`;
+          return;
+        }
+        $("inspector").innerHTML = `
+          <article>
+            <div class="inspector-head">
+              <div><p class="eyebrow">${esc(issue.discipline)}</p><h2>${esc(issue.title)}</h2></div>
+              <span class="status">${esc(issue.status).replaceAll("_", " ")}</span>
+            </div>
+            <p>${esc(issue.description)}</p>
+            <div class="detail">
+              <div><span>Room</span><strong>${esc(issue.room)}</strong></div>
+              <div><span>Severity</span><strong>${esc(issue.severity)}</strong></div>
+              <div><span>Confidence</span><strong>${pct(issue.confidence)}%</strong></div>
+              <div><span>Assignee</span><strong>${esc(issue.assignee || "Unassigned")}</strong></div>
+            </div>
+            ${evidenceBlock("Requirement", issue.requirement?.text, issue.requirement?.source)}
+            ${evidenceBlock("Observation", issue.observation?.text, issue.observation?.media_id)}
+            ${evidenceBlock("Recommended action", issue.recommended_action, "human review gate")}
+            <div class="actions">
+              <button class="approve" data-status="approved">Approve</button>
+              <button data-status="needs_more_evidence">More evidence</button>
+              <button id="rfiBtn">RFI</button>
+              <button class="reject" data-status="rejected_false_positive">Reject</button>
+            </div>
+          </article>`;
+      }
+      function evidenceBlock(title, text, source) {
+        return `<section class="evidence-block"><span>${esc(title)}</span><div><p>${esc(text || "")}</p><small>${esc(source || "")}</small></div></section>`;
+      }
+      function renderSnapshot(issue) {
+        const pins = state.overlay?.pins || [];
+        $("pinCount").textContent = `${pins.length} pins`;
+        $("snapshot").innerHTML = `
+          <div><span>Sheet</span><strong>${esc(issue?.plan_location?.sheet_id || "E1.1")}</strong></div>
+          <div><span>Location</span><strong>${esc(issue?.room || "pending")}</strong></div>
+          <div><span>Evidence</span><strong>${issue?.evidence?.length || 0} links</strong></div>`;
+      }
+      function renderEvidence(issue) {
+        $("assetCount").textContent = `${state.documents.length} docs · ${state.media.length} media`;
+        const observations = state.observations.length ? state.observations : (issue?.evidence || []).map((item, index) => ({
+          observation_id: `${item.evidence_id}_${index}`,
+          object_type: issue.type,
+          text: issue.observation?.text || "Field verification pending.",
+          media_id: issue.observation?.media_id || "pending",
+          confidence: issue.confidence
+        }));
+        $("recognitions").innerHTML = observations.slice(0, 5).map((item) => `
+          <article><strong>${esc(item.object_type).replaceAll("_", " ")}</strong><p>${esc(item.text)}</p><small>media ${esc(item.media_id)} · confidence ${pct(item.confidence)}%</small></article>
+        `).join("");
+        $("assets").innerHTML = [
+          ...state.documents.slice(0, 3).map((item) => `<div><span>${esc(item.type)}</span><strong>${esc(item.filename)}</strong><small>${esc(item.parsed_status)} · rev ${esc(item.revision)}</small></div>`),
+          ...state.media.slice(0, 3).map((item) => `<div><span>media</span><strong>${esc(item.filename)}</strong><small>${esc(item.mime)}</small></div>`)
+        ].join("");
+      }
+      function renderPlan() {
+        const pins = state.overlay?.pins || [];
+        $("overlayCount").textContent = `${pins.length} issue pins`;
+        $("planCanvas").querySelectorAll(".pin").forEach((node) => node.remove());
+        for (const pin of pins) {
+          const el = document.createElement("span");
+          el.className = `pin ${pin.severity}`;
+          el.style.left = `${pin.x * 100}%`;
+          el.style.top = `${pin.y * 100}%`;
+          el.title = `${pin.label} ${pin.room}`;
+          $("planCanvas").appendChild(el);
+        }
+      }
+      function renderReports(issue) {
+        $("reportPreview").innerHTML = `
+          <article><span>${state.issues.length} issue rows</span><strong>Punch list</strong><p>${esc(state.issues.slice(0, 3).map((item) => item.title).join(" · "))}</p></article>
+          <article><span>${esc(issue?.room || "No issue")}</span><strong>RFI draft</strong><p>${esc(issue?.rfi_draft || "Select an issue to preview the RFI question.")}</p></article>
+          <article><span>${state.documents.length} docs · ${state.media.length} media</span><strong>Change order evidence</strong><p>Requirement, observation, plan pin, citation, and field media evidence are bundled for review.</p></article>`;
+        $("rfiOutput").value = issue ? buildRfi(issue) : "";
+      }
+      function renderPipeline() {
+        const states = ["queued", "ingesting", "indexing", "extracting frames", "detecting", "reasoning", "review ready"];
+        $("steps").innerHTML = states.map((item, index) => `<div><span>${index + 1}</span><strong>${item}</strong></div>`).join("");
+        $("tech").innerHTML = state.tech.map((item) => `
+          <article class="${item.status === "ready" ? "ready" : ""}"><span>${esc(item.status).replaceAll("_", " ")}</span><strong>${esc(item.label)}</strong><p>${esc(item.summary)}</p><small>${item.evidence_count} evidence records</small></article>
+        `).join("");
+        $("jobLog").textContent = JSON.stringify(state.job || { state: "idle", progress: 0 }, null, 2);
+      }
+      function buildRfi(issue) {
+        return [`# RFI Draft: ${issue.title}`, "", `Location: ${issue.room}`, "", `Contract requirement: ${issue.requirement?.text || ""}`, "", `Field observation: ${issue.observation?.text || ""}`, "", `Question: ${issue.rfi_draft || ""}`, "", "PM review required before sending."].join("\n");
+      }
+      async function runReview(message = "Review run queued. Pipeline progress will update automatically.") {
+        if (!state.project) return;
+        notice(message);
+        state.job = await request(`/v1/projects/${state.project.project_id}/analyze`, { method: "POST", body: JSON.stringify({ priority: "normal", force: true }) });
+        render();
+        await pollJob(state.job.job_id);
+      }
+      async function pollJob(jobId) {
+        for (let i = 0; i < 10; i++) {
+          await new Promise((resolve) => setTimeout(resolve, 900));
+          state.job = await request(`/v1/jobs/${jobId}`);
+          render();
+          if (["review_ready", "failed"].includes(state.job.state)) break;
+        }
+        if (state.project) await loadProject(state.project.project_id);
+        notice(state.job?.state === "failed" ? state.job.error : "Review complete. Issue candidates were refreshed.");
+      }
+      async function setIssueStatus(status) {
+        const issue = selectedIssue();
+        if (!issue) return;
+        const updated = await request(`/v1/issues/${issue.issue_id}`, { method: "PATCH", body: JSON.stringify({ status }) });
+        state.issues = state.issues.map((item) => item.issue_id === updated.issue_id ? updated : item);
+        notice(`Issue marked as ${status.replaceAll("_", " ")}.`);
+        render();
+      }
+      async function createProject() {
+        const name = $("newName").value.trim();
+        if (!name) return;
+        state.project = await request("/v1/projects", { method: "POST", body: JSON.stringify({ name, address: $("newAddress").value, project_type: "tenant_improvement" }) });
+        await loadProjects();
+        $("projectSelect").value = state.project.project_id;
+        $("newName").value = "";
+        $("newAddress").value = "";
+      }
+      async function uploadFile(file) {
+        if (!file || !state.project) return;
+        const kind = file.type.startsWith("image/") || file.type.startsWith("video/") || file.type.startsWith("audio/") ? "media" : "document";
+        const presign = await request("/v1/uploads/presign", { method: "POST", body: JSON.stringify({ project_id: state.project.project_id, filename: file.name, mime: file.type || "application/octet-stream", size: file.size, kind }) });
+        const form = new FormData();
+        form.append("file", file);
+        const upload = await fetch(presign.upload_url, { method: "POST", body: form });
+        if (!upload.ok) throw new Error(await upload.text());
+        await fetch(presign.complete_url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ document_type: kind === "media" ? "media" : "plan", revision: "A" }) });
+        notice(`${file.name} uploaded. Run review to refresh issue candidates.`);
+        await loadProject(state.project.project_id);
+      }
+      async function searchRag() {
+        if (!state.project) return;
+        const result = await request(`/v1/projects/${state.project.project_id}/rag/search?q=${encodeURIComponent($("ragQuery").value)}`);
+        $("ragResults").innerHTML = result.returned_context.map((item) => `<article><strong>${esc(item.chunk_id || "chunk")}</strong><p>${esc(String(item.text || "").slice(0, 260))}</p><small>score ${esc(item.score || "n/a")}</small></article>`).join("");
+        notice(`Found ${result.returned_context.length} citation candidates.`);
+      }
+      async function generateReport(kind, format) {
+        if (!state.project) return;
+        const report = await request(`/v1/projects/${state.project.project_id}/reports`, { method: "POST", body: JSON.stringify({ report_type: kind, format }) });
+        $("reportLink").innerHTML = `<a href="${esc(report.download_url)}" target="_blank" rel="noreferrer">Download generated report</a>`;
+        notice(`${kind.replaceAll("_", " ")} ${format.toUpperCase()} report generated.`);
+      }
+      function switchView(view) {
+        state.view = view;
+        document.querySelectorAll(".panel").forEach((item) => item.classList.remove("active"));
+        $(`panel${view[0].toUpperCase()}${view.slice(1)}`).classList.add("active");
+        document.querySelectorAll("[data-view]").forEach((item) => item.classList.toggle("active", item.dataset.view === view));
+      }
+      document.addEventListener("click", async (event) => {
+        const target = event.target.closest("button");
+        if (!target) return;
+        if (target.dataset.view) switchView(target.dataset.view);
+        if (target.dataset.filter) {
+          state.filter = target.dataset.filter;
+          document.querySelectorAll("[data-filter]").forEach((item) => item.classList.toggle("active", item.dataset.filter === state.filter));
+          render();
+        }
+        if (target.dataset.issue) { state.selectedId = target.dataset.issue; render(); }
+        if (target.dataset.status) await setIssueStatus(target.dataset.status);
+        if (target.dataset.report) {
+          const [kind, format] = target.dataset.report.split(":");
+          await generateReport(kind, format);
+        }
+      });
+      $("projectSelect").addEventListener("change", async (event) => {
+        state.project = state.projects.find((item) => item.project_id === event.target.value);
+        await loadProject(state.project.project_id);
+      });
+      $("runBtn").addEventListener("click", () => runReview());
+      $("addProjectBtn").addEventListener("click", createProject);
+      $("uploadBtn").addEventListener("click", () => $("fileInput").click());
+      $("fileInput").addEventListener("change", (event) => uploadFile(event.target.files[0]));
+      $("searchBtn").addEventListener("click", searchRag);
+      window.addEventListener("beforeinstallprompt", (event) => {
+        event.preventDefault();
+        state.deferredPrompt = event;
+      });
+      $("installBtn").addEventListener("click", async () => {
+        if (!state.deferredPrompt) {
+          notice("Use the browser install option to add Buili to your home screen.");
+          return;
+        }
+        state.deferredPrompt.prompt();
+        state.deferredPrompt = null;
+      });
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+      loadProjects().catch((error) => notice(`Load failed: ${error.message}`));
+    </script>
+  </body>
+</html>
