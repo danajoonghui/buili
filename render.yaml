@@ -1,0 +1,72 @@
+previews:
+  generation: manual
+
+services:
+  - type: keyvalue
+    name: buili-cache
+    region: singapore
+    plan: free
+    ipAllowList: []
+    maxmemoryPolicy: allkeys-lru
+    persistenceMode: off
+
+  - type: web
+    name: buili-api
+    runtime: python
+    region: singapore
+    plan: free
+    buildCommand: pip install -e .
+    startCommand: uvicorn services.api.buili.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
+    autoDeployTrigger: commit
+    disk:
+      name: buili-api-storage
+      mountPath: /var/data/buili
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: BUILI_DATABASE_URL
+        fromDatabase:
+          name: buili-postgres
+          property: connectionString
+      - key: BUILI_REDIS_URL
+        fromService:
+          type: keyvalue
+          name: buili-cache
+          property: connectionString
+      - key: BUILI_STORAGE_ROOT
+        value: /var/data/buili/storage
+      - key: BUILI_PUBLIC_BASE_URL
+        value: /api
+      - key: BUILI_CORS_ORIGINS
+        value: "*"
+
+  - type: web
+    name: buili-web
+    runtime: node
+    region: singapore
+    plan: free
+    buildCommand: npm ci && npm --workspace apps/web run build
+    startCommand: npm --workspace apps/web run start -- --port $PORT
+    healthCheckPath: /
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: 22.12.0
+      - key: NEXT_PUBLIC_API_URL
+        value: /api
+      - key: BUILI_INTERNAL_API_URL
+        fromService:
+          type: web
+          name: buili-api
+          property: hostport
+
+databases:
+  - name: buili-postgres
+    region: singapore
+    plan: free
+    databaseName: buili
+    user: buili
+    postgresMajorVersion: "17"
+    ipAllowList: []

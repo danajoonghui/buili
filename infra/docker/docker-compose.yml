@@ -1,0 +1,72 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: buili
+      POSTGRES_USER: buili
+      POSTGRES_PASSWORD: buili
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  api:
+    build:
+      context: ../..
+      dockerfile: infra/docker/python.Dockerfile
+    command: python -m services.api.buili.main
+    environment:
+      BUILI_API_HOST: 0.0.0.0
+      BUILI_API_PORT: 8000
+      BUILI_DATABASE_URL: postgresql+psycopg://buili:buili@postgres:5432/buili
+      BUILI_STORAGE_ROOT: /app/data/storage
+      BUILI_PUBLIC_BASE_URL: http://localhost:8000
+      BUILI_MODEL_GATEWAY_URL: http://model-gateway:8100
+      BUILI_REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../../data:/app/data
+    depends_on:
+      - postgres
+      - redis
+
+  model-gateway:
+    build:
+      context: ../..
+      dockerfile: infra/docker/python.Dockerfile
+    command: python -m services.model_gateway.buili_model_gateway.main
+    environment:
+      CUDA_VISIBLE_DEVICES: "7"
+    ports:
+      - "8100:8100"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: ["gpu"]
+
+  inference-worker:
+    build:
+      context: ../..
+      dockerfile: infra/docker/python.Dockerfile
+    command: python -m workers.inference_orchestrator
+    environment:
+      CUDA_VISIBLE_DEVICES: "7"
+      BUILI_DATABASE_URL: postgresql+psycopg://buili:buili@postgres:5432/buili
+      BUILI_MODEL_GATEWAY_URL: http://model-gateway:8100
+      BUILI_REDIS_URL: redis://redis:6379/0
+    volumes:
+      - ../../data:/app/data
+    depends_on:
+      - postgres
+      - redis
+      - model-gateway
+
+volumes:
+  postgres-data:

@@ -1,0 +1,15 @@
+name = "buili-api-gateway"
+main = "src/index.ts"
+compatibility_date = "2026-06-24"
+
+[vars]
+API_BASE = "https://api.your-buili-domain.com"
+WEB_ORIGIN = "https://buildi.onrender.com"
+
+[[queues.producers]]
+queue = "buili-inference"
+binding = "INFERENCE_QUEUE"
+
+[[r2_buckets]]
+binding = "BUILI_R2"
+bucket_name = "buili-uploads"

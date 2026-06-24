@@ -1,0 +1,2 @@
+"""Buili FastAPI service package."""
+

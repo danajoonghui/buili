@@ -1,0 +1,19 @@
+{
+  "name": "buili",
+  "private": true,
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "web:dev": "npm --workspace apps/web run dev",
+    "web:build": "npm --workspace apps/web run build",
+    "web:lint": "npm --workspace apps/web run lint",
+    "api:dev": "conda run -n cjh_buili python -m services.api.buili.main",
+    "model:dev": "CUDA_VISIBLE_DEVICES=7 conda run -n cjh_buili python -m services.model_gateway.buili_model_gateway.main",
+    "train:download": "conda run -n cjh_buili python ml/download_public_data.py --limit 80",
+    "train:smoke": "CUDA_VISIBLE_DEVICES=7 conda run -n cjh_buili python ml/train_doc_layout_smoke.py --epochs 3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1"
+  }
+}
