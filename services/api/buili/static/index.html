@@ -386,14 +386,55 @@
         gap: 12px;
         margin-top: 14px;
       }
+      .plan-review {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 320px;
+        gap: 24px;
+        align-items: start;
+      }
+      .plan-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+      .plan-toolbar div {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .plan-toolbar button {
+        min-width: 38px;
+      }
+      .zoom-readout {
+        color: var(--muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: .1em;
+        font-weight: 800;
+      }
+      .plan-viewport {
+        overflow: auto;
+        border: 1px solid #bdbdb8;
+        background: #fff;
+        max-height: 74vh;
+      }
       .plan-canvas {
         position: relative;
-        max-width: 980px;
+        max-width: none;
+        transition: width .16s ease;
+      }
+      .plan-canvas img {
+        border: 0;
       }
       .pin {
         position: absolute;
         width: 10px;
         height: 10px;
+        min-height: 0;
+        padding: 0;
         margin: -5px 0 0 -5px;
         background: var(--warn);
         border: 2px solid #fff;
@@ -401,6 +442,76 @@
       }
       .pin.minor { background: var(--signal); }
       .pin.informational { background: #777; }
+      .pin.active {
+        width: 14px;
+        height: 14px;
+        margin: -7px 0 0 -7px;
+        box-shadow: 0 0 0 2px var(--ink);
+      }
+      .plan-sidebar {
+        display: grid;
+        gap: 14px;
+      }
+      .plan-summary,
+      .sheet-list,
+      .pin-list,
+      .region-list,
+      .trace-detail {
+        border-left: 1px solid var(--line);
+        padding: 12px 14px;
+      }
+      .plan-summary {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        background: var(--concrete);
+        border-left: 3px solid var(--signal);
+      }
+      .plan-summary span,
+      .sheet-list span,
+      .pin-list span,
+      .region-list span,
+      .trace-detail span {
+        display: block;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: .1em;
+        font-size: 11px;
+        font-weight: 800;
+        margin-bottom: 5px;
+      }
+      .sheet-list div,
+      .region-list div {
+        display: grid;
+        grid-template-columns: 72px 1fr auto;
+        gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .sheet-list div:last-child,
+      .region-list div:last-child {
+        border-bottom: 0;
+      }
+      .pin-list button {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+        border: 0;
+        border-left: 3px solid var(--warn);
+        text-align: left;
+        padding: 9px 11px;
+        margin: 4px 0;
+        min-height: 0;
+      }
+      .pin-list button.active {
+        background: #edf6ef;
+      }
+      .pin-list button.minor { border-left-color: var(--signal); }
+      .pin-list button.informational { border-left-color: #777; }
+      .trace-detail p {
+        margin: 6px 0 12px;
+      }
       .report-preview {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -482,11 +593,21 @@
         .project-select { grid-template-columns: 1fr; }
         .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .kpi:nth-child(2) { border-right: 0; }
-        .grid, .two-col { grid-template-columns: 1fr; }
+        .grid, .two-col, .plan-review { grid-template-columns: 1fr; }
         .detail { grid-template-columns: 1fr; }
         .detail div { border-right: 0; border-bottom: 1px solid var(--line); }
         .evidence-block { grid-template-columns: 1fr; gap: 8px; }
         .recognition-list, .evidence-links, .asset-list, .report-preview, .tech, .pipeline-steps, .pipeline-events {
+          grid-template-columns: 1fr;
+        }
+        .plan-toolbar {
+          align-items: flex-start;
+        }
+        .plan-summary {
+          grid-template-columns: 1fr;
+        }
+        .sheet-list div,
+        .region-list div {
           grid-template-columns: 1fr;
         }
         .bottom {
@@ -598,8 +719,28 @@
 
         <section id="panelPlan" class="panel">
           <div class="section-row"><h2>Drawing overlay</h2><span id="overlayCount">0 issue pins</span></div>
-          <div class="plan-canvas" id="planCanvas">
-            <img src="/plans/utah-e11-electrical-plan.jpg" alt="E1.1 electrical plan" />
+          <div class="plan-toolbar">
+            <div>
+              <button data-zoom="out" title="Zoom out">-</button>
+              <button data-zoom="fit" title="Fit drawing">Fit</button>
+              <button data-zoom="in" title="Zoom in">+</button>
+              <span class="zoom-readout" id="zoomReadout">100%</span>
+            </div>
+            <span class="subtle" id="planSource">E1.1 electrical plan</span>
+          </div>
+          <div class="plan-review">
+            <div class="plan-viewport">
+              <div class="plan-canvas" id="planCanvas">
+                <img src="/plans/utah-e11-electrical-plan.jpg" alt="E1.1 electrical plan" />
+              </div>
+            </div>
+            <aside class="plan-sidebar">
+              <div class="plan-summary" id="planSummary"></div>
+              <section class="sheet-list" id="sheetList"></section>
+              <section class="pin-list" id="pinList"></section>
+              <section class="region-list" id="regionList"></section>
+              <section class="trace-detail" id="planTraceDetail"></section>
+            </aside>
           </div>
         </section>
 
@@ -648,6 +789,7 @@
         tech: [],
         job: null,
         selectedId: "",
+        planZoom: 1,
         deferredPrompt: null,
         autoRan: new Set()
       };
@@ -814,14 +956,57 @@
       }
       function renderPlan() {
         const pins = state.overlay?.pins || [];
+        const sheets = state.overlay?.sheets || [];
+        const regions = state.overlay?.regions || [];
+        const issue = selectedIssue();
+        const activePin = pins.find((pin) => pin.id === issue?.issue_id) || pins[0] || null;
+        const activeSheetNumber = issue?.plan_location?.sheet_id || activePin?.sheet_id || "E1.1";
+        const orderedSheets = [...sheets].sort((a, b) => {
+          const aActive = a.sheet_number === activeSheetNumber ? 0 : 1;
+          const bActive = b.sheet_number === activeSheetNumber ? 0 : 1;
+          if (aActive !== bActive) return aActive - bActive;
+          const aElec = a.discipline === "electrical" ? 0 : 1;
+          const bElec = b.discipline === "electrical" ? 0 : 1;
+          if (aElec !== bElec) return aElec - bElec;
+          return String(a.sheet_number).localeCompare(String(b.sheet_number));
+        });
+        const activeSheet = orderedSheets.find((sheet) => sheet.sheet_number === activeSheetNumber) || orderedSheets[0];
         $("overlayCount").textContent = `${pins.length} issue pins`;
+        $("zoomReadout").textContent = `${Math.round(state.planZoom * 100)}%`;
+        $("planSource").textContent = activeSheet ? `${activeSheet.sheet_number} · ${activeSheet.title}` : "E1.1 electrical plan";
+        $("planSummary").innerHTML = `
+          <div><span>Sheets</span><strong>${sheets.length}</strong></div>
+          <div><span>Plan entities</span><strong>${regions.length}</strong></div>
+          <div><span>Issue pins</span><strong>${pins.length}</strong></div>`;
+        $("sheetList").innerHTML = `<span>Sheets</span>${orderedSheets.map((sheet) => `
+          <div><strong>${esc(sheet.sheet_number)}</strong><p>${esc(sheet.title || sheet.discipline)}</p><small>${esc(sheet.discipline)} · page ${esc(sheet.page_no)}</small></div>
+        `).join("") || `<p class="subtle">No parsed sheets yet.</p>`}`;
+        $("pinList").innerHTML = `<span>Issue pins</span>${pins.map((pin, index) => `
+          <button class="${esc(pin.severity)} ${pin.id === issue?.issue_id ? "active" : ""}" data-issue="${esc(pin.id)}">
+            <strong>${index + 1}. ${esc(pin.label)}</strong><small>${esc(pin.room)} · ${pct(pin.confidence)}%</small>
+          </button>
+        `).join("") || `<p class="subtle">No plan pins yet.</p>`}`;
+        $("regionList").innerHTML = `<span>Detected plan entities</span>${regions.slice(0, 10).map((region) => `
+          <div><strong>${esc(region.type).replaceAll("_", " ")}</strong><p>${esc(region.room || "room pending")}</p><small>${pct(region.confidence)}%</small></div>
+        `).join("") || `<p class="subtle">No extracted plan entities yet.</p>`}`;
+        $("planTraceDetail").innerHTML = issue ? `
+          <span>Selected trace</span>
+          <h3>${esc(issue.title)}</h3>
+          <p>${esc(issue.requirement?.text || "")}</p>
+          <p>${esc(issue.observation?.text || "")}</p>
+          <small>${esc(activePin?.room || issue.room)} · ${esc(issue.plan_location?.sheet_id || "sheet pending")}</small>
+        ` : `<span>Selected trace</span><p class="subtle">Select a pin or issue to inspect the trace.</p>`;
         $("planCanvas").querySelectorAll(".pin").forEach((node) => node.remove());
+        $("planCanvas").style.width = `${Math.round(state.planZoom * 100)}%`;
         for (const pin of pins) {
-          const el = document.createElement("span");
-          el.className = `pin ${pin.severity}`;
+          const el = document.createElement("button");
+          el.type = "button";
+          el.dataset.issue = pin.id;
+          el.className = `pin ${pin.severity} ${pin.id === issue?.issue_id ? "active" : ""}`;
           el.style.left = `${pin.x * 100}%`;
           el.style.top = `${pin.y * 100}%`;
           el.title = `${pin.label} ${pin.room}`;
+          el.setAttribute("aria-label", `${pin.label} ${pin.room}`);
           $("planCanvas").appendChild(el);
         }
       }
@@ -925,6 +1110,12 @@
         }
         if (target.dataset.issue) { state.selectedId = target.dataset.issue; render(); }
         if (target.dataset.status) await setIssueStatus(target.dataset.status);
+        if (target.dataset.zoom) {
+          if (target.dataset.zoom === "fit") state.planZoom = 1;
+          if (target.dataset.zoom === "in") state.planZoom = Math.min(2.2, state.planZoom + 0.2);
+          if (target.dataset.zoom === "out") state.planZoom = Math.max(0.7, state.planZoom - 0.2);
+          renderPlan();
+        }
         if (target.dataset.report) {
           const [kind, format] = target.dataset.report.split(":");
           await generateReport(kind, format);

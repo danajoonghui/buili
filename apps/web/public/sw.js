@@ -1,5 +1,12 @@
-const CACHE_NAME = "buili-pwa-v1";
-const STATIC_ASSETS = ["/", "/manifest.webmanifest", "/icon.svg"];
+const CACHE_NAME = "buili-pwa-v2";
+const STATIC_ASSETS = [
+  "/",
+  "/manifest.webmanifest",
+  "/icon.svg",
+  "/buili_favicon_transparent.png",
+  "/plans/utah-e11-electrical-plan.jpg",
+  "/site-media/construction-site-electrical-work.jpg"
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)));
@@ -28,4 +35,3 @@ self.addEventListener("fetch", (event) => {
       .catch(() => caches.match(request).then((cached) => cached || caches.match("/")))
   );
 });
-
