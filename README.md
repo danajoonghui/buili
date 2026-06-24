@@ -59,4 +59,4 @@ For a production deployment, set the optional API environment variables in the R
 - `BUILI_MODEL_GATEWAY_URL` for a KAIST GPU, SGLang, vLLM, or OpenAI-compatible model gateway
 - `BUILI_R2_ACCOUNT_ID`, `BUILI_R2_ACCESS_KEY_ID`, `BUILI_R2_SECRET_ACCESS_KEY`, and `BUILI_R2_BUCKET` if object storage is wired in
 
-Render free web services are suitable for demos, but production file persistence requires the API service disk in the Blueprint.
+Render free web services are suitable for demos, but production file persistence requires the API service disk in the Blueprint. Render persistent disks require a paid service instance, so `buili-api` uses the `starter` plan.
