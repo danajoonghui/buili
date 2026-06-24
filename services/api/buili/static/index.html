@@ -609,6 +609,9 @@
             <button class="primary" data-report="punch:pdf">Punch PDF</button>
             <button data-report="punch:csv">Punch CSV</button>
             <button data-report="co_evidence:pdf">CO Evidence</button>
+            <button data-report="co_evidence:xlsx">CO XLSX</button>
+            <button data-report="rfi:md">RFI MD</button>
+            <button data-report="rfi:pdf">RFI PDF</button>
           </div>
           <p id="reportLink"></p>
           <textarea class="rfi-output" id="rfiOutput" readonly></textarea>
@@ -892,8 +895,12 @@
       async function searchRag() {
         if (!state.project) return;
         const result = await request(`/v1/projects/${state.project.project_id}/rag/search?q=${encodeURIComponent($("ragQuery").value)}`);
-        $("ragResults").innerHTML = result.returned_context.map((item) => `<article><strong>${esc(item.chunk_id || "chunk")}</strong><p>${esc(String(item.text || "").slice(0, 260))}</p><small>score ${esc(item.score || "n/a")}</small></article>`).join("");
-        notice(`Found ${result.returned_context.length} citation candidates.`);
+        const citations = result.citations || [];
+        $("ragResults").innerHTML = `
+          <article><strong>Answer</strong><p>${esc(result.answer || "No answer available.")}</p><small>${citations.length} citations</small></article>
+          ${citations.map((item) => `<article><strong>${esc(item.sheet || item.chunk_id || "citation")}</strong><p>${esc(String(item.excerpt || "").slice(0, 280))}</p><small>score ${esc(item.score || "n/a")} · page ${esc(item.page || "-")} · rev ${esc(item.revision || "-")}</small></article>`).join("")}
+        `;
+        notice(`Found ${citations.length || result.returned_context.length} citation candidates.`);
       }
       async function generateReport(kind, format) {
         if (!state.project) return;

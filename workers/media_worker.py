@@ -1,6 +1,6 @@
-import os
+from services.api.buili.gpu import force_gpu_7
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "7"
+force_gpu_7()
 
 
 def main() -> None:
@@ -9,4 +9,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

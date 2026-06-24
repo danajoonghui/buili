@@ -1,10 +1,9 @@
-import os
-
-os.environ["CUDA_VISIBLE_DEVICES"] = "7"
-
 from services.api.buili.database import SessionLocal, init_db
+from services.api.buili.gpu import force_gpu_7
 from services.api.buili.models import Job
 from services.api.buili.pipeline import run_analysis_job
+
+force_gpu_7()
 
 
 def main() -> None:
@@ -18,4 +17,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

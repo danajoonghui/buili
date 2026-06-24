@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import hashlib
-import os
 from typing import Any
 
 import numpy as np
@@ -9,7 +8,9 @@ import uvicorn
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "7"
+from services.api.buili.gpu import force_gpu_7, gpu_policy
+
+force_gpu_7()
 
 app = FastAPI(title="Buili Model Gateway", version="0.1.0")
 
@@ -43,7 +44,7 @@ def _hash_embedding(text: str, dims: int = 384) -> list[float]:
 
 @app.get("/healthz")
 def healthz() -> dict[str, str]:
-    return {"status": "ok", "cuda_visible_devices": os.environ["CUDA_VISIBLE_DEVICES"]}
+    return {"status": "ok", **gpu_policy()}
 
 
 @app.post("/v1/chat/completions")
@@ -52,7 +53,9 @@ def chat_completions(payload: ChatRequest) -> dict[str, Any]:
     content = {
         "issue_type": "unverified",
         "confidence": 0.52,
-        "recommended_action": "Require cited plan/spec evidence and human PM review before approval.",
+        "recommended_action": (
+            "Require cited plan/spec evidence and human PM review before approval."
+        ),
         "model_profile": payload.model,
         "input_hash": hashlib.sha256(prompt.encode()).hexdigest()[:16],
     }
@@ -60,7 +63,13 @@ def chat_completions(payload: ChatRequest) -> dict[str, Any]:
         "id": f"chatcmpl-{content['input_hash']}",
         "object": "chat.completion",
         "model": payload.model,
-        "choices": [{"index": 0, "message": {"role": "assistant", "content": content}, "finish_reason": "stop"}],
+        "choices": [
+            {
+                "index": 0,
+                "message": {"role": "assistant", "content": content},
+                "finish_reason": "stop",
+            }
+        ],
     }
 
 
@@ -79,4 +88,3 @@ def embeddings(payload: EmbeddingRequest) -> dict[str, Any]:
 
 if __name__ == "__main__":
     uvicorn.run("services.model_gateway.buili_model_gateway.main:app", host="0.0.0.0", port=8100)
-

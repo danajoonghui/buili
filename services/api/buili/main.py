@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session, selectinload
 from .config import get_settings
 from .database import get_session, init_db
 from .database import SessionLocal
+from .gpu import force_gpu_7, gpu_policy
 from .models import (
     Document,
     Frame,
@@ -28,10 +29,10 @@ from .models import (
     new_id,
 )
 from .pipeline import (
-    cosine_search,
     create_job_for_project,
     ensure_demo_project,
     overlay_for_project,
+    rag_answer,
     run_analysis_job,
 )
 from .reports import build_markdown_rfi, build_report
@@ -56,6 +57,7 @@ from .schemas import (
 )
 from .storage import file_sha256, object_path, save_upload
 
+force_gpu_7()
 settings = get_settings()
 REPO_ROOT = Path(__file__).resolve().parents[3]
 WEB_PUBLIC_ROOT = REPO_ROOT / "apps" / "web" / "public"
@@ -157,8 +159,8 @@ def icon_svg() -> FileResponse:
 
 
 @app.get("/healthz")
-def healthz() -> dict[str, str]:
-    return {"status": "ok", "service": "buili-api"}
+def healthz() -> dict[str, object]:
+    return {"status": "ok", "service": "buili-api", "gpu": gpu_policy()}
 
 
 @app.get("/v1/projects", response_model=list[ProjectOut])
@@ -483,12 +485,9 @@ def rag_search(project_id: str, q: str, session: Session = Depends(get_session))
     chunks = session.scalars(
         select(SpecChunk).join(Document).where(Document.project_id == project_id)
     ).all()
-    return {
-        "query": q,
-        "filters": {"project_id": project_id},
-        "retrieval": {"bm25_top_k": 50, "vector_top_k": 50, "rerank_top_k": 8},
-        "returned_context": cosine_search(q, list(chunks), top_k=8),
-    }
+    result = rag_answer(q, list(chunks), top_k=8)
+    result["filters"] = {"project_id": project_id}
+    return result
 
 
 @app.get("/v1/metrics")

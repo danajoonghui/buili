@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+# ruff: noqa: E402,I001
+
 import argparse
 import json
-import os
 from collections import Counter
 from pathlib import Path
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "7"
+from services.api.buili.gpu import assert_gpu_7, force_gpu_7
+
+force_gpu_7()
 
 import joblib
 import torch
@@ -70,8 +73,10 @@ def load_dataset(path: Path) -> tuple[torch.Tensor, list[str]]:
         for line in fh:
             record = json.loads(line)
             dominant = Counter(str(label) for label in record.get("labels", [])).most_common(1)
-            doc_category = f"dominant_layout_{dominant[0][0]}" if dominant else str(
-                record.get("doc_category", "layout_unknown")
+            doc_category = (
+                f"dominant_layout_{dominant[0][0]}"
+                if dominant
+                else str(record.get("doc_category", "layout_unknown"))
             )
             xs.append(featurize(record))
             ys.append(doc_category)
@@ -82,14 +87,15 @@ def load_dataset(path: Path) -> tuple[torch.Tensor, list[str]]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=Path, default=Path("data/processed/public_layout_sample.jsonl"))
+    parser.add_argument(
+        "--data", type=Path, default=Path("data/processed/public_layout_sample.jsonl")
+    )
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--out-dir", type=Path, default=Path("data/artifacts/layout_smoke"))
     args = parser.parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
-    if os.environ.get("CUDA_VISIBLE_DEVICES") != "7":
-        raise RuntimeError("CUDA_VISIBLE_DEVICES must be exactly 7")
+    assert_gpu_7()
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is not available; refusing to train outside GPU 7 policy")
 
@@ -142,7 +148,9 @@ def main() -> None:
                 correct += int((pred == batch_y).sum())
                 total += len(batch_y)
         acc = correct / max(total, 1)
-        history.append({"epoch": epoch, "loss": total_loss / max(len(train_loader), 1), "val_acc": acc})
+        history.append(
+            {"epoch": epoch, "loss": total_loss / max(len(train_loader), 1), "val_acc": acc}
+        )
         print(history[-1])
 
     artifact = args.out_dir / "tiny_layout_classifier.pt"
@@ -160,7 +168,7 @@ def main() -> None:
     (args.out_dir / "training_summary.json").write_text(
         json.dumps(
             {
-                "cuda_visible_devices": os.environ["CUDA_VISIBLE_DEVICES"],
+                "cuda_visible_devices": "7",
                 "torch_device": torch.cuda.get_device_name(0),
                 "records": len(x),
                 "classes": list(encoder.classes_),

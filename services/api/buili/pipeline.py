@@ -917,3 +917,58 @@ def cosine_search(query: str, chunks: list[SpecChunk], top_k: int = 8) -> list[d
         }
         for score, chunk in scored[:top_k]
     ]
+
+
+def rag_answer(query: str, chunks: list[SpecChunk], top_k: int = 8) -> dict[str, Any]:
+    context = cosine_search(query, chunks, top_k=top_k)
+    if not context:
+        return {
+            "query": query,
+            "answer": "No indexed drawing or specification context is available for this project yet.",
+            "citations": [],
+            "retrieval": {"bm25_top_k": 50, "vector_top_k": 50, "rerank_top_k": top_k},
+            "returned_context": [],
+        }
+
+    citations = []
+    for item in context:
+        metadata = item.get("metadata") or {}
+        citations.append(
+            {
+                "chunk_id": item["chunk_id"],
+                "score": item["score"],
+                "document_id": metadata.get("document_id", ""),
+                "sheet": metadata.get("sheet_id", ""),
+                "revision": metadata.get("revision", ""),
+                "page": item.get("page", 1),
+                "discipline": metadata.get("discipline", ""),
+                "excerpt": item.get("text", "")[:320],
+            }
+        )
+
+    lead = citations[0]
+    themes = []
+    lowered = query.lower()
+    if "afci" in lowered:
+        themes.append("AFCI outlet protection")
+    if "gfci" in lowered:
+        themes.append("GFCI/WP exterior protection")
+    if "smoke" in lowered or "detector" in lowered:
+        themes.append("smoke detector placement")
+    if "outlet" in lowered or "receptacle" in lowered:
+        themes.append("outlet coverage")
+    subject = ", ".join(themes) if themes else "the requested construction requirement"
+    answer = (
+        f"The indexed contract context supports reviewing {subject}. "
+        f"The strongest citation is on sheet {lead.get('sheet') or 'page ' + str(lead.get('page', 1))} "
+        f"revision {lead.get('revision') or 'unknown'}, and the returned citations should be attached "
+        "to any issue candidate before PM approval."
+    )
+
+    return {
+        "query": query,
+        "answer": answer,
+        "citations": citations,
+        "retrieval": {"bm25_top_k": 50, "vector_top_k": 50, "rerank_top_k": top_k},
+        "returned_context": context,
+    }
