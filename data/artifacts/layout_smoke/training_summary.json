@@ -1,0 +1,35 @@
+{
+  "cuda_visible_devices": "7",
+  "torch_device": "NVIDIA RTX A6000",
+  "records": 79,
+  "classes": [
+    "dominant_layout_1",
+    "dominant_layout_10",
+    "dominant_layout_11",
+    "dominant_layout_2",
+    "dominant_layout_4",
+    "dominant_layout_5",
+    "dominant_layout_6",
+    "dominant_layout_7",
+    "dominant_layout_8",
+    "dominant_layout_9"
+  ],
+  "history": [
+    {
+      "epoch": 1,
+      "loss": 2.2681190967559814,
+      "val_acc": 0.7
+    },
+    {
+      "epoch": 2,
+      "loss": 2.0751535296440125,
+      "val_acc": 0.7
+    },
+    {
+      "epoch": 3,
+      "loss": 1.8806602358818054,
+      "val_acc": 0.7
+    }
+  ],
+  "artifact": "data/artifacts/layout_smoke/tiny_layout_classifier.pt"
+}

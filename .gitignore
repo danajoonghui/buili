@@ -17,7 +17,10 @@ data/artifacts/*
 data/storage/
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+!data/processed/public_layout_sample.jsonl
 !data/artifacts/.gitkeep
+!data/artifacts/layout_smoke/
+!data/artifacts/layout_smoke/**
 *.db
 *.sqlite
 *.sqlite3
