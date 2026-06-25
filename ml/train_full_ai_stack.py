@@ -50,6 +50,12 @@ PUBLIC_SOURCES = {
         "license_note": "Public government inspection checklist.",
         "used_for": ["pdf_rag", "mismatch_candidates", "reports"],
     },
+    "wikimedia_field_photo": {
+        "name": "Wikimedia Commons Installing electrical wiring.jpg",
+        "url": "https://commons.wikimedia.org/wiki/File:Installing_electrical_wiring.jpg",
+        "license_note": "Public-domain field wiring photograph from Wikimedia Commons.",
+        "used_for": ["media_recognition"],
+    },
     "sklearn_digits": {
         "name": "scikit-learn digits public fallback",
         "url": "https://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_digits.html",
@@ -401,7 +407,7 @@ def build_field_dataset(image_path: Path, rng: random.Random) -> list[dict[str, 
             )
             rows.append(
                 {
-                    "source": "bundled_public_field_photo",
+                    "source": "wikimedia_public_domain_field_photo",
                     "label": label,
                     "bbox": [round(value, 4) for value in bbox],
                     "features": crop_features(image, bbox),
@@ -600,7 +606,12 @@ def main() -> None:
     field_path = args.processed_dir / "field_recognition_samples.jsonl"
     write_jsonl(field_path, field_rows)
     dataset_registry.append(
-        dataset_record(field_path, ["utah_plan"], "field_element_training", len(field_rows))
+        dataset_record(
+            field_path,
+            ["wikimedia_field_photo"],
+            "field_element_training",
+            len(field_rows),
+        )
     )
     field_result = train_classifier(
         "field_element_classifier",

@@ -1,5 +1,5 @@
 {
-  "generated_at": 1782355657,
+  "generated_at": 1782356358,
   "gpu": {
     "cuda_visible_devices": "7",
     "required_device": "7",
@@ -116,7 +116,7 @@
           ]
         }
       ],
-      "checked_at": 1782355654
+      "checked_at": 1782356354
     },
     {
       "path": "data/processed/buili_ai_stack/rag_pairs.jsonl",
@@ -145,7 +145,7 @@
           ]
         }
       ],
-      "checked_at": 1782355654
+      "checked_at": 1782356354
     },
     {
       "path": "data/processed/buili_ai_stack/plan_symbol_samples.jsonl",
@@ -164,26 +164,24 @@
           ]
         }
       ],
-      "checked_at": 1782355656
+      "checked_at": 1782356356
     },
     {
       "path": "data/processed/buili_ai_stack/field_recognition_samples.jsonl",
-      "sha256": "f31029bfcd30146cfd828fabcf269512016a1cc7840f6d28dcd10bac06585863",
+      "sha256": "1ae51879f6f1b0677044883d71dadfa66f2e8373037a37df65800f2e76520e82",
       "rows": 250,
       "purpose": "field_element_training",
       "sources": [
         {
-          "name": "Utah.gov Cooper Residence public plan PDF",
-          "url": "https://www.utah.gov/pmn/files/1020117.pdf",
-          "license_note": "Publicly accessible permit drawing; record source before reuse.",
+          "name": "Wikimedia Commons Installing electrical wiring.jpg",
+          "url": "https://commons.wikimedia.org/wiki/File:Installing_electrical_wiring.jpg",
+          "license_note": "Public-domain field wiring photograph from Wikimedia Commons.",
           "used_for": [
-            "pdf_rag",
-            "plan_symbol",
-            "mismatch_candidates"
+            "media_recognition"
           ]
         }
       ],
-      "checked_at": 1782355656
+      "checked_at": 1782356357
     },
     {
       "path": "data/processed/buili_ai_stack/mismatch_samples.jsonl",
@@ -212,7 +210,7 @@
           ]
         }
       ],
-      "checked_at": 1782355656
+      "checked_at": 1782356357
     },
     {
       "path": "data/processed/buili_ai_stack/report_routing_samples.jsonl",
@@ -241,7 +239,7 @@
           ]
         }
       ],
-      "checked_at": 1782355657
+      "checked_at": 1782356357
     }
   ]
 }
