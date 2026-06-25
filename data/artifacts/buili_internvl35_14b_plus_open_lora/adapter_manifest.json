@@ -1,0 +1,25 @@
+{
+  "status": "trained",
+  "model_family": "InternVL3.5",
+  "base_model_id": "OpenGVLab/InternVL3_5-14B-HF",
+  "teacher_model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+  "adapter_path": "data/artifacts/buili_internvl35_14b_plus_open_lora",
+  "adapter_files": [
+    "adapter_config.json",
+    "adapter_model.safetensors"
+  ],
+  "dataset": "data/processed/buili_vlm_plus_open/sft_dataset.jsonl",
+  "dataset_sha256": "08d635513a9a148d2eec93d1aaac0500e36ef1e155173e067e5a8c2d0bb6245c",
+  "open_corpus_version": "open_construction_corpus_v0.1",
+  "train_rows": 226,
+  "eval_rows": 35,
+  "global_steps": 30,
+  "eval_loss": 0.863899140345997,
+  "json_valid_rate": 0.0,
+  "gpu": {
+    "cuda_visible_devices": "7",
+    "required_device": "7",
+    "policy": "single_gpu_only"
+  },
+  "trained_at": 1782394075
+}

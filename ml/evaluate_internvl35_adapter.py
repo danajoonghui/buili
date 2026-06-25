@@ -6,6 +6,7 @@ import argparse
 import json
 import sys
 import time
+from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -26,8 +27,13 @@ from transformers import AutoModelForMultimodalLM, AutoProcessor, BitsAndBytesCo
 DEFAULT_MODEL_ID = "OpenGVLab/InternVL3_5-14B-HF"
 PRODUCTION_SUFFIX = (
     "\n\nProduction output constraint: return compact valid JSON only. "
-    "Do not use markdown fences. Close every array and object. Prefer concise fields "
-    "over long prose."
+    "Do not use markdown fences. Close every array and object. For issue, plan, and "
+    "report tasks include PM-ready fields such as executive_summary, requirement, "
+    "observation, evidence_chain, risk, recommended_action, rfi_draft, punch_list_row, "
+    "change_order_evidence, and decision_gate when applicable. For field evidence "
+    "tasks include evidence_limitations, pm_gate, conclusions, and issues[] with "
+    "requirement, evidence, plan_location, risk, and next_action. Do not make a final "
+    "defect decision automatically."
 )
 
 
@@ -89,8 +95,35 @@ def contract_hits(parsed: dict[str, Any] | None) -> list[str]:
         "decision_gate",
         "human_review_required",
         "final_defect_decision",
+        "evidence_limitations",
+        "pm_gate",
+        "conclusions",
+        "issues",
     ]
-    return [key for key in expected if key in parsed]
+    hits = [key for key in expected if key in parsed]
+    issues = parsed.get("issues")
+    if isinstance(issues, list) and issues:
+        nested_expected = ["requirement", "evidence", "plan_location", "risk", "next_action"]
+        for key in nested_expected:
+            if any(isinstance(issue, dict) and key in issue for issue in issues):
+                hits.append(f"issues[].{key}")
+    return hits
+
+
+def select_eval_rows(rows: list[dict[str, Any]], max_eval_samples: int) -> list[dict[str, Any]]:
+    by_task: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        by_task[str(row.get("task") or "unknown")].append(row)
+    selected: list[dict[str, Any]] = []
+    task_names = sorted(by_task)
+    while len(selected) < max_eval_samples and any(by_task.values()):
+        for task in task_names:
+            bucket = by_task[task]
+            if bucket:
+                selected.append(bucket.pop(0))
+                if len(selected) >= max_eval_samples:
+                    break
+    return selected
 
 
 def main() -> None:
@@ -121,7 +154,7 @@ def main() -> None:
         raise RuntimeError("CUDA is required; refusing to evaluate outside GPU 7.")
     device = torch.device("cuda:0")
     rows = [row for row in read_jsonl(args.dataset) if row.get("split") == "eval"]
-    rows = rows[: args.max_eval_samples]
+    rows = select_eval_rows(rows, args.max_eval_samples)
 
     processor_path = args.adapter_dir / "processor"
     processor = AutoProcessor.from_pretrained(
@@ -184,6 +217,11 @@ def main() -> None:
     avg_contract_hit_count = (
         sum(item["contract_hit_count"] for item in results) / len(results) if results else 0.0
     )
+    workflow_contract_rate = (
+        sum(1 for item in results if item["contract_hit_count"] >= 3) / len(results)
+        if results
+        else 0.0
+    )
     report = {
         "status": "evaluated",
         "model_family": "InternVL3.5",
@@ -195,6 +233,7 @@ def main() -> None:
         "max_new_tokens": args.max_new_tokens,
         "json_valid_rate": json_valid_rate,
         "avg_contract_hit_count": avg_contract_hit_count,
+        "workflow_contract_rate": workflow_contract_rate,
         "evaluated_at": int(time.time()),
         "results": results,
     }

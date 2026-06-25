@@ -41,6 +41,12 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
         return [json.loads(line) for line in fh if line.strip()]
 
 
+def read_optional_json(path: Path) -> dict[str, Any] | None:
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def build_messages(row: dict[str, Any], *, include_answer: bool) -> list[dict[str, Any]]:
     user_content = [
         {"type": "image", "image": str(Path(image_path).resolve())} for image_path in row["images"]
@@ -176,6 +182,10 @@ def main() -> None:
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
     rows = read_jsonl(args.dataset)
+    dataset_manifest = read_optional_json(args.dataset.parent / "dataset_manifest.json")
+    open_corpus_manifest = read_optional_json(
+        REPO_ROOT / "data" / "processed" / "open_construction_corpus" / "manifest.json"
+    )
     train_rows = [row for row in rows if row.get("split") == "train"][: args.max_train_samples]
     eval_rows = [row for row in rows if row.get("split") == "eval"][: args.max_eval_samples]
     if not train_rows:
@@ -318,6 +328,20 @@ def main() -> None:
             "layers_to_transform": lora_layers or "all",
         },
         "dataset": str(args.dataset),
+        "dataset_manifest": dataset_manifest,
+        "open_corpus_manifest": open_corpus_manifest,
+        "data_governance": {
+            "commercial_training_claim": (
+                "Only public/government/open-license rows collected into the local manifest "
+                "are included. Gated or CC-BY-NC datasets are excluded unless separately "
+                "licensed."
+            ),
+            "required_next_stage": (
+                "Replace or augment weak public labels with licensed customer field photos, "
+                "plan PDFs, inspection outcomes, and PM acceptance labels before production "
+                "accuracy claims."
+            ),
+        },
         "train_rows": len(train_rows),
         "eval_rows": len(eval_rows),
         "epochs": args.epochs,
@@ -364,6 +388,8 @@ def main() -> None:
         "adapter_path": summary["adapter_path"],
         "adapter_files": sorted(path.name for path in args.out_dir.glob("adapter*")),
         "dataset": summary["dataset"],
+        "dataset_sha256": (dataset_manifest or {}).get("sha256"),
+        "open_corpus_version": (open_corpus_manifest or {}).get("corpus_version"),
         "train_rows": summary["train_rows"],
         "eval_rows": summary["eval_rows"],
         "global_steps": summary["global_steps"],

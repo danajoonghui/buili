@@ -62,6 +62,10 @@ settings = get_settings()
 REPO_ROOT = Path(__file__).resolve().parents[3]
 WEB_PUBLIC_ROOT = REPO_ROOT / "apps" / "web" / "public"
 API_STATIC_ROOT = Path(__file__).resolve().parent / "static"
+VLM_ARTIFACT_CANDIDATES = [
+    "buili_internvl35_14b_plus_open_lora",
+    "buili_internvl35_14b_lora",
+]
 
 DOCUMENT_EXTENSIONS = {".pdf", ".txt", ".md", ".csv", ".docx", ".xlsx"}
 MEDIA_EXTENSIONS = {
@@ -179,20 +183,36 @@ def _read_artifact_json(path: Path) -> dict[str, object] | None:
 
 
 def _vlm_training_status() -> dict[str, object]:
-    artifact_dir = REPO_ROOT / "data" / "artifacts" / "buili_internvl35_14b_lora"
+    artifacts_root = REPO_ROOT / "data" / "artifacts"
+    artifact_name = VLM_ARTIFACT_CANDIDATES[0]
+    artifact_dir = artifacts_root / artifact_name
+    for candidate in VLM_ARTIFACT_CANDIDATES:
+        candidate_dir = artifacts_root / candidate
+        candidate_summary = _read_artifact_json(candidate_dir / "training_summary.json")
+        if candidate_summary:
+            artifact_name = candidate
+            artifact_dir = candidate_dir
+            summary = candidate_summary
+            break
+
     summary = _read_artifact_json(artifact_dir / "training_summary.json")
     manifest = _read_artifact_json(artifact_dir / "adapter_manifest.json")
     generation_qa = _read_artifact_json(artifact_dir / "generation_qa.json")
+    dataset_manifest = summary.get("dataset_manifest") if summary else None
+    open_corpus_manifest = summary.get("open_corpus_manifest") if summary else None
     if not summary:
         return {
             "status": "not_trained",
             "model_family": "InternVL3.5",
             "base_model_id": "OpenGVLab/InternVL3_5-14B-HF",
             "teacher_model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+            "preferred_artifact_path": str(artifact_dir),
             "gpu_policy": gpu_policy(),
             "detail": (
                 "Run HF_HOME=/SSD/guest/chojoonghui/hf_cache CUDA_VISIBLE_DEVICES=7 "
-                "conda run -n cjh_buili python ml/train_internvl35_lora.py"
+                "conda run -n cjh_buili python ml/train_internvl35_lora.py "
+                "--dataset data/processed/buili_vlm_plus_open/sft_dataset.jsonl "
+                "--out-dir data/artifacts/buili_internvl35_14b_plus_open_lora"
             ),
         }
 
@@ -201,8 +221,26 @@ def _vlm_training_status() -> dict[str, object]:
     if generation_qa:
         qa_rate = generation_qa.get("json_valid_rate")
         qa_samples = int(generation_qa.get("max_eval_samples") or 0)
+
+    dataset_sha256 = None
+    dataset_rows = None
+    if isinstance(dataset_manifest, dict):
+        dataset_sha256 = dataset_manifest.get("sha256")
+        dataset_rows = dataset_manifest.get("rows")
+    elif manifest:
+        dataset_sha256 = manifest.get("dataset_sha256")
+
+    open_corpus_version = None
+    open_corpus_records = None
+    if isinstance(open_corpus_manifest, dict):
+        open_corpus_version = open_corpus_manifest.get("corpus_version")
+        open_corpus_records = open_corpus_manifest.get("records")
+    elif manifest:
+        open_corpus_version = manifest.get("open_corpus_version")
+
     return {
         "status": summary.get("status", "trained"),
+        "artifact_name": artifact_name,
         "model_family": summary.get("model_family"),
         "base_model_id": summary.get("base_model_id"),
         "teacher_model_id": summary.get("teacher_model_id"),
@@ -213,6 +251,12 @@ def _vlm_training_status() -> dict[str, object]:
         "eval_rows": summary.get("eval_rows"),
         "global_steps": summary.get("global_steps"),
         "eval_loss": summary.get("eval_loss"),
+        "dataset": summary.get("dataset"),
+        "dataset_sha256": dataset_sha256,
+        "dataset_rows": dataset_rows,
+        "open_corpus_version": open_corpus_version,
+        "open_corpus_records": open_corpus_records,
+        "data_governance": summary.get("data_governance"),
         "raw_generation_json_valid_rate": summary.get("json_valid_rate"),
         "production_prompt_json_valid_rate": qa_rate,
         "production_prompt_eval_samples": qa_samples,

@@ -13,9 +13,13 @@
     "train:download": "conda run -n cjh_buili python ml/download_public_data.py --limit 200",
     "train:smoke": "CUDA_VISIBLE_DEVICES=7 conda run -n cjh_buili python ml/train_doc_layout_smoke.py --epochs 3",
     "train:full": "CUDA_VISIBLE_DEVICES=7 conda run -n cjh_buili python ml/train_full_ai_stack.py --epochs 30",
+    "data:open-corpus": "conda run -n cjh_buili python ml/collect_open_construction_corpus.py",
     "train:vlm:data": "conda run -n cjh_buili python ml/build_buili_vlm_dataset.py",
+    "train:vlm:combine": "conda run -n cjh_buili python ml/build_combined_vlm_open_dataset.py",
     "train:vlm": "HF_HOME=${HF_HOME:-/SSD/guest/chojoonghui/hf_cache} CUDA_VISIBLE_DEVICES=7 conda run -n cjh_buili python ml/train_internvl35_lora.py",
-    "eval:vlm": "HF_HOME=${HF_HOME:-/SSD/guest/chojoonghui/hf_cache} CUDA_VISIBLE_DEVICES=7 conda run -n cjh_buili python ml/evaluate_internvl35_adapter.py"
+    "train:vlm:open": "HF_HOME=${HF_HOME:-/SSD/guest/chojoonghui/hf_cache} CUDA_VISIBLE_DEVICES=7 conda run -n cjh_buili python ml/train_internvl35_lora.py --dataset data/processed/buili_vlm_plus_open/sft_dataset.jsonl --out-dir data/artifacts/buili_internvl35_14b_plus_open_lora",
+    "eval:vlm": "HF_HOME=${HF_HOME:-/SSD/guest/chojoonghui/hf_cache} CUDA_VISIBLE_DEVICES=7 conda run -n cjh_buili python ml/evaluate_internvl35_adapter.py",
+    "eval:vlm:open": "HF_HOME=${HF_HOME:-/SSD/guest/chojoonghui/hf_cache} CUDA_VISIBLE_DEVICES=7 conda run -n cjh_buili python ml/evaluate_internvl35_adapter.py --dataset data/processed/buili_vlm_plus_open/sft_dataset.jsonl --adapter-dir data/artifacts/buili_internvl35_14b_plus_open_lora --out data/artifacts/buili_internvl35_14b_plus_open_lora/generation_qa.json"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1"

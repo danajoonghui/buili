@@ -1,0 +1,357 @@
+{
+  "status": "trained",
+  "model_family": "InternVL3.5",
+  "base_model_id": "OpenGVLab/InternVL3_5-14B-HF",
+  "teacher_model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+  "adapter_path": "data/artifacts/buili_internvl35_14b_plus_open_lora",
+  "gpu": {
+    "cuda_visible_devices": "7",
+    "required_device": "7",
+    "policy": "single_gpu_only"
+  },
+  "torch_device": "NVIDIA RTX A6000",
+  "quantization": "4bit",
+  "lora": {
+    "r": 16,
+    "alpha": 32,
+    "target_modules": [
+      "down_proj",
+      "gate_proj",
+      "k_proj",
+      "o_proj",
+      "q_proj",
+      "up_proj",
+      "v_proj"
+    ],
+    "layers_to_transform": "all"
+  },
+  "dataset": "data/processed/buili_vlm_plus_open/sft_dataset.jsonl",
+  "dataset_manifest": {
+    "created_at": 1782392039,
+    "path": "data/processed/buili_vlm_plus_open/sft_dataset.jsonl",
+    "sha256": "08d635513a9a148d2eec93d1aaac0500e36ef1e155173e067e5a8c2d0bb6245c",
+    "rows": 261,
+    "train_rows": 226,
+    "eval_rows": 35,
+    "image_rows": 101,
+    "task_counts": {
+      "field_evidence_gate": 12,
+      "field_media_observation": 6,
+      "field_observations": 12,
+      "inspection_record_routing": 160,
+      "plan_classify": 9,
+      "plan_field_comparison": 6,
+      "plan_issue_candidates": 9,
+      "plan_pins": 9,
+      "plan_requirements": 9,
+      "public_pdf_requirement_extraction": 2,
+      "report_co": 9,
+      "report_punch": 9,
+      "report_rfi": 9
+    },
+    "sources": [
+      {
+        "path": "data/processed/buili_vlm/sft_dataset.jsonl",
+        "rows": 93,
+        "role": "pm_review_contract"
+      },
+      {
+        "path": "data/processed/open_construction_corpus/sft_dataset.jsonl",
+        "rows": 168,
+        "role": "public_government_inspection_and_field_weak_labels"
+      }
+    ],
+    "governance": "Combined dataset keeps public source attribution in upstream manifests. CC-BY-NC/gated sources are excluded unless separately licensed."
+  },
+  "open_corpus_manifest": {
+    "built_at": 1782391851,
+    "corpus_version": "open_construction_corpus_v0.1",
+    "records": {
+      "la_inspection_labels": 300,
+      "seattle_permit_labels": 300,
+      "commons_field_images": 6,
+      "public_pdfs": 2,
+      "sft_rows": 168
+    },
+    "sources": [
+      {
+        "name": "Los Angeles Department of Building and Safety inspections",
+        "url": "https://data.lacity.org/resource/9w5z-rg2h.json",
+        "license_status": "government_open_data_terms_apply",
+        "records": 300,
+        "used_for": [
+          "inspection_result_labels",
+          "risk_routing",
+          "report_generation"
+        ]
+      },
+      {
+        "name": "Seattle building permits open data",
+        "url": "https://data.seattle.gov/resource/76t5-zqzr.json",
+        "license_status": "government_open_data_terms_apply",
+        "records": 300,
+        "used_for": [
+          "permit_review_labels",
+          "risk_routing",
+          "report_generation"
+        ]
+      },
+      {
+        "name": "Wikimedia Commons construction field images",
+        "url": "https://commons.wikimedia.org/w/api.php",
+        "license_status": "file_level_license_recorded_review_before_commercial_use",
+        "records": 6,
+        "used_for": [
+          "field_media_recognition",
+          "evidence_gate_vlm_sft"
+        ]
+      },
+      {
+        "name": "Public plan/checklist PDFs",
+        "url": "multiple_government_public_urls",
+        "license_status": "government_public_access_review_before_commercial_reuse",
+        "records": 2,
+        "used_for": [
+          "pdf_rag",
+          "requirement_extraction",
+          "plan_trace_vlm_sft"
+        ]
+      },
+      {
+        "name": "LouisChen15/ConstructionSite",
+        "status": "inaccessible_or_gated",
+        "error": "Dataset 'LouisChen15/ConstructionSite' is a gated dataset on the Hub. You must be authenticated to access it.",
+        "license_status": "cc-by-nc-4.0_research_only_not_for_commercial_training"
+      }
+    ],
+    "commercial_readiness": {
+      "usable_now_with_review": [
+        "government open data inspection/permit labels",
+        "public government PDFs with source attribution and legal review",
+        "Wikimedia Commons images after file-level license review"
+      ],
+      "research_only_or_blocked": [
+        "LouisChen15/ConstructionSite is gated and CC-BY-NC-4.0",
+        "Roboflow/HF construction safety conversions require license verification"
+      ],
+      "production_gap": "Silicon-Valley-grade commercial deployment still needs licensed customer field photos, plan PDFs, and inspector/PM acceptance labels."
+    },
+    "sha256": {
+      "inspection_labels": "05aa772b7f2dec271a868278bc0eb00854f786466cdbf253cd7fbc119dd6ae37",
+      "permit_review_labels": "15fb311f606654d3142a9d3a2c36107cc191973b1222ac19842f164bcc3d29c6",
+      "field_media_labels": "135b11deb803be06ab9427373198113b95dd5afa3f58f50f83ef9175636d74de",
+      "public_pdf_requirements": "7015c0336ef6490659a877c998626ecf574f07983018e767af1122d5a5db9641",
+      "sft_dataset": "02ad0c86d84d1119942881c347becdf23fd9f65a1486ca8397f55375dff7ac1b"
+    }
+  },
+  "data_governance": {
+    "commercial_training_claim": "Only public/government/open-license rows collected into the local manifest are included. Gated or CC-BY-NC datasets are excluded unless separately licensed.",
+    "required_next_stage": "Replace or augment weak public labels with licensed customer field photos, plan PDFs, inspection outcomes, and PM acceptance labels before production accuracy claims."
+  },
+  "train_rows": 226,
+  "eval_rows": 35,
+  "epochs": 2,
+  "global_steps": 30,
+  "train_history": [
+    {
+      "epoch": 1,
+      "global_step": 1,
+      "train_loss": 1.3405567109584808,
+      "learning_rate": 3e-05
+    },
+    {
+      "epoch": 1,
+      "global_step": 2,
+      "train_loss": 1.0212080627679825,
+      "learning_rate": 6e-05
+    },
+    {
+      "epoch": 1,
+      "global_step": 3,
+      "train_loss": 1.5143024250864983,
+      "learning_rate": 5.979715073225829e-05
+    },
+    {
+      "epoch": 1,
+      "global_step": 4,
+      "train_loss": 1.6406155936419964,
+      "learning_rate": 5.919134611739472e-05
+    },
+    {
+      "epoch": 1,
+      "global_step": 5,
+      "train_loss": 1.3106271903961897,
+      "learning_rate": 5.819077862357725e-05
+    },
+    {
+      "epoch": 1,
+      "global_step": 6,
+      "train_loss": 0.970699543133378,
+      "learning_rate": 5.680897920970237e-05
+    },
+    {
+      "epoch": 1,
+      "global_step": 7,
+      "train_loss": 0.7184220477938652,
+      "learning_rate": 5.50646343423881e-05
+    },
+    {
+      "epoch": 1,
+      "global_step": 8,
+      "train_loss": 1.0874316412955523,
+      "learning_rate": 5.298133329356934e-05
+    },
+    {
+      "epoch": 1,
+      "global_step": 9,
+      "train_loss": 0.8228902714326978,
+      "learning_rate": 5.0587249136062016e-05
+    },
+    {
+      "epoch": 1,
+      "global_step": 10,
+      "train_loss": 1.127102910540998,
+      "learning_rate": 4.791475775108359e-05
+    },
+    {
+      "epoch": 1,
+      "global_step": 11,
+      "train_loss": 1.0312412464991212,
+      "learning_rate": 4.5e-05
+    },
+    {
+      "epoch": 1,
+      "global_step": 12,
+      "train_loss": 0.723499177955091,
+      "learning_rate": 4.1882392981174704e-05
+    },
+    {
+      "epoch": 1,
+      "global_step": 13,
+      "train_loss": 0.6281696939840913,
+      "learning_rate": 3.860409698133271e-05
+    },
+    {
+      "epoch": 1,
+      "global_step": 14,
+      "train_loss": 1.0375730865634978,
+      "learning_rate": 3.520944533000792e-05
+    },
+    {
+      "epoch": 1,
+      "global_step": 15,
+      "train_loss": 0.11360649531707168,
+      "learning_rate": 3.174434486731428e-05
+    },
+    {
+      "epoch": 2,
+      "global_step": 16,
+      "train_loss": 0.6512667695060372,
+      "learning_rate": 2.8255655132685727e-05
+    },
+    {
+      "epoch": 2,
+      "global_step": 17,
+      "train_loss": 0.538601016276516,
+      "learning_rate": 2.479055466999209e-05
+    },
+    {
+      "epoch": 2,
+      "global_step": 18,
+      "train_loss": 0.6097107202513143,
+      "learning_rate": 2.13959030186673e-05
+    },
+    {
+      "epoch": 2,
+      "global_step": 19,
+      "train_loss": 0.9710080803488381,
+      "learning_rate": 1.8117607018825294e-05
+    },
+    {
+      "epoch": 2,
+      "global_step": 20,
+      "train_loss": 0.8056668856879696,
+      "learning_rate": 1.5000000000000007e-05
+    },
+    {
+      "epoch": 2,
+      "global_step": 21,
+      "train_loss": 0.941784579801606,
+      "learning_rate": 1.2085242248916421e-05
+    },
+    {
+      "epoch": 2,
+      "global_step": 22,
+      "train_loss": 0.42200347530888394,
+      "learning_rate": 9.412750863937996e-06
+    },
+    {
+      "epoch": 2,
+      "global_step": 23,
+      "train_loss": 0.42135166621301323,
+      "learning_rate": 7.018666706430663e-06
+    },
+    {
+      "epoch": 2,
+      "global_step": 24,
+      "train_loss": 1.0068441313342191,
+      "learning_rate": 4.935365657611912e-06
+    },
+    {
+      "epoch": 2,
+      "global_step": 25,
+      "train_loss": 0.8733120990364114,
+      "learning_rate": 3.1910207902976354e-06
+    },
+    {
+      "epoch": 2,
+      "global_step": 26,
+      "train_loss": 0.47271415281284135,
+      "learning_rate": 1.8092213764227506e-06
+    },
+    {
+      "epoch": 2,
+      "global_step": 27,
+      "train_loss": 0.730937220811029,
+      "learning_rate": 8.086538826052858e-07
+    },
+    {
+      "epoch": 2,
+      "global_step": 28,
+      "train_loss": 0.32862518102047034,
+      "learning_rate": 2.028492677417093e-07
+    },
+    {
+      "epoch": 2,
+      "global_step": 29,
+      "train_loss": 0.9463018271781038,
+      "learning_rate": 0.0
+    },
+    {
+      "epoch": 2,
+      "global_step": 30,
+      "train_loss": 0.10280178065295331,
+      "learning_rate": 2.028492677417093e-07
+    }
+  ],
+  "eval_loss": 0.863899140345997,
+  "json_valid_rate": 0.0,
+  "generation_eval": [],
+  "silicon_valley_output_contract": {
+    "required_sections": [
+      "executive_summary",
+      "requirement",
+      "observation",
+      "evidence_chain",
+      "risk",
+      "recommended_action",
+      "rfi_draft",
+      "punch_list_row",
+      "change_order_evidence",
+      "decision_gate"
+    ],
+    "business_standard": "Outputs must be PM-review-ready issue packages, not loose captions. Every candidate needs plan citation, field evidence status, risk, next action, RFI/punch/CO routing, and human verification gate."
+  },
+  "trained_at": 1782394075,
+  "scope_note": "This is a real 14B VLM LoRA domain-adaptation run on public Buili drawing and field-evidence data. Production readiness still requires pilot customer data, larger labeled field media, and external QA before market claims."
+}

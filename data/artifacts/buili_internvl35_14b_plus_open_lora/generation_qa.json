@@ -1,0 +1,189 @@
+{
+  "status": "evaluated",
+  "model_family": "InternVL3.5",
+  "base_model_id": "OpenGVLab/InternVL3_5-14B-HF",
+  "adapter_dir": "data/artifacts/buili_internvl35_14b_plus_open_lora",
+  "gpu": {
+    "cuda_visible_devices": "7",
+    "required_device": "7",
+    "policy": "single_gpu_only"
+  },
+  "torch_device": "NVIDIA RTX A6000",
+  "max_eval_samples": 10,
+  "max_new_tokens": 768,
+  "json_valid_rate": 1.0,
+  "avg_contract_hit_count": 7.9,
+  "workflow_contract_rate": 1.0,
+  "evaluated_at": 1782394669,
+  "results": [
+    {
+      "id": "buili-field-17-field_evidence_gate",
+      "task": "field_evidence_gate",
+      "json_valid": true,
+      "contract_hits": [
+        "evidence_limitations",
+        "pm_gate",
+        "conclusions",
+        "issues",
+        "issues[].requirement",
+        "issues[].evidence",
+        "issues[].plan_location",
+        "issues[].risk",
+        "issues[].next_action"
+      ],
+      "contract_hit_count": 9,
+      "generated": "{\"evidence_limitations\":[\"no plan view\",\"no spec view\",\"no drawing view\",\"no punch list view\",\"no RFI view\",\"no change order view\"],\"pm_gate\":[\"final decision requires plan/spec evidence and field verification\"],\"conclusions\":[\"final defect decision cannot be made without cited plan/spec evidence and field verification\"],\"issues\":[{\"requirement\":\"Electrical work must be installed in accordance with the approved plans and specifications.\",\"observation\":\"Electrical conduit is exposed and not properly secured to the wall.\",\"evidence\":\"The image shows exposed electrical conduit running vertically along the wall, with some conduit bending and not properly secured.\",\"plan_location\":\"Not visible in the image.\",\"risk\":\"Exposed and improperly secured conduit could lead to electrical hazards, damage, or failure to meet building codes.\",\"next_action\":\"Verify compliance with electrical installation standards and building codes. Document findings and escalate if necessary.\"},{\"requirement\":\"Electrical work must be installed in accordance with the approved plans and specifications.\",\"observation\":\"Electrical wiring is visible and not properly organized or protected.\",\"evidence\":\"The image shows multiple electrical wires protruding from an open electrical box, with no visible cover or protection.\",\"plan_location\":\"Not visible in the image.\",\"risk\":\"Exposed wiring could lead to electrical hazards, short circuits, or failure to meet building codes.\",\"next_action\":\"Verify compliance with electrical installation standards and building codes. Document findings and escalate if necessary.\"},{\"requirement\":\"Electrical work must be installed in accordance with the approved plans and specifications.\",\"observation\":\"Electrical work appears to be in progress, with incomplete installation.\",\"evidence\":\"The image shows an unfinished electrical installation with exposed wires and conduit.\",\"plan_location\":\"Not visible in the image.\",\"risk\":\"Incomplete installation could lead to delays, rework, or failure to meet project requirements.\",\"next_action\":\"Verify progress against project schedule and electrical installation standards. Document findings and escalate if necessary.\"}]}"
+    },
+    {
+      "id": "open-commons-field-0003",
+      "task": "field_media_observation",
+      "json_valid": true,
+      "contract_hits": [
+        "evidence_limitations",
+        "pm_gate",
+        "issues",
+        "issues[].requirement",
+        "issues[].evidence",
+        "issues[].plan_location",
+        "issues[].risk",
+        "issues[].next_action"
+      ],
+      "contract_hit_count": 8,
+      "generated": "{\"evidence_limitations\": \"The image shows a close-up of a wooden stud with a white cable attached. The cable is secured with a metal bracket. The background includes other wooden studs and insulation material.\", \"issues\": [{\"conclusions\": \"The cable is attached to the stud with a metal bracket, but the condition and installation method are not clear from the image alone.\", \"evidence\": \"The cable is secured with a metal bracket to the wooden stud.\", \"next_action\": \"Inspect the cable installation and bracket for compliance with electrical codes and building standards.\", \"plan_location\": \"Wall framing\", \"risk\": \"Potential electrical hazard if installation is improper.\", \"requirement\": \"Compliance with electrical and building codes for cable installation.\"}], \"pm_gate\": \"Human review required to assess compliance with electrical codes and building standards.\"}"
+    },
+    {
+      "id": "buili-field-16-field_observations",
+      "task": "field_observations",
+      "json_valid": true,
+      "contract_hits": [
+        "evidence_limitations",
+        "pm_gate",
+        "conclusions",
+        "issues",
+        "issues[].requirement",
+        "issues[].evidence",
+        "issues[].plan_location",
+        "issues[].risk",
+        "issues[].next_action"
+      ],
+      "contract_hit_count": 9,
+      "generated": "{\"evidence_limitations\":[\"no plan view\",\"no spec view\",\"no drawing view\",\"no punch list view\",\"no RFI view\",\"no change order view\"],\"pm_gate\":[\"final decision requires plan/spec evidence and field verification\"],\"conclusions\":[\"final defect decision cannot be made without cited plan/spec evidence and field verification\"],\"issues\":[{\"requirement\":\"Electrical work must be installed in accordance with the approved plans and specifications.\",\"observation\":\"Electrical conduit is exposed and not properly secured to the wall.\",\"evidence\":\"The image shows exposed electrical conduit running vertically along the wall, with some conduit bending and not properly secured.\",\"plan_location\":\"Not visible in the image.\",\"risk\":\"Exposed and improperly secured conduit could lead to electrical hazards, damage, or failure to meet building codes.\",\"next_action\":\"Verify compliance with electrical installation standards and building codes. Document findings and escalate if necessary.\"},{\"requirement\":\"Electrical work must be installed in accordance with the approved plans and specifications.\",\"observation\":\"Electrical wiring is visible and not properly organized or protected.\",\"evidence\":\"The image shows multiple electrical wires protruding from an open electrical box, with no visible cover or protection.\",\"plan_location\":\"Not visible in the image.\",\"risk\":\"Exposed wiring could lead to electrical hazards, short circuits, or failure to meet building codes.\",\"next_action\":\"Verify compliance with electrical installation standards and building codes. Document findings and escalate if necessary.\"},{\"requirement\":\"Electrical work must be installed in accordance with the approved plans and specifications.\",\"observation\":\"Electrical work appears to be in progress, with incomplete installation.\",\"evidence\":\"The image shows an unfinished electrical installation with exposed wires and conduit.\",\"plan_location\":\"Not visible in the image.\",\"risk\":\"Incomplete installation could lead to delays, rework, or failure to meet project requirements.\",\"next_action\":\"Verify progress against project schedule and electrical installation standards. Document findings and escalate if necessary.\"}]}"
+    },
+    {
+      "id": "open-inspection-routing-00000",
+      "task": "inspection_record_routing",
+      "json_valid": true,
+      "contract_hits": [
+        "evidence_chain",
+        "risk",
+        "recommended_action",
+        "human_review_required",
+        "final_defect_decision"
+      ],
+      "contract_hit_count": 5,
+      "generated": "{\"evidence_chain\": [], \"final_defect_decision\": false, \"human_review_required\": true, \"license_status\": \"government_open_data_terms_apply\", \"recommended_action\": \"Route partial/correction inspections to PM review with permit, trade, and follow-up evidence requirements.\", \"risk\": \"needs_review\", \"source\": \"Los Angeles DBS open inspections API\", \"source_url\": \"https://data.lacity.org/resource/9w5z-rg2h.json\", \"task\": \"inspection_record_routing\", \"trade\": \"building\"}"
+    },
+    {
+      "id": "buili-compare-00",
+      "task": "plan_field_comparison",
+      "json_valid": true,
+      "contract_hits": [
+        "evidence_limitations",
+        "conclusions",
+        "issues",
+        "issues[].requirement",
+        "issues[].evidence",
+        "issues[].plan_location",
+        "issues[].risk",
+        "issues[].next_action"
+      ],
+      "contract_hit_count": 8,
+      "generated": "{\"evidence_limitations\":[\"The image does not show the full extent of the wiring or the electrical plan's specific details for this section.\"],\"conclusions\":[\"The field photo shows exposed wiring and an unfinished electrical setup, which may not align with the completed state expected in the plan.\"],\"issues\":[{\"requirement\":\"Electrical components must be fully installed and concealed per the plan's specifications.\",\"evidence\":\"Exposed wiring and open junction boxes in the field photo.\",\"plan_location\":\"Not specified in the provided plan image.\",\"risk\":\"Potential safety hazard and non-compliance with building codes.\",\"next_action\":\"Verify installation against the plan and ensure all components are properly enclosed and secured.\"}]}"
+    },
+    {
+      "id": "buili-field-19-field_evidence_gate",
+      "task": "field_evidence_gate",
+      "json_valid": true,
+      "contract_hits": [
+        "evidence_limitations",
+        "pm_gate",
+        "conclusions",
+        "issues",
+        "issues[].requirement",
+        "issues[].evidence",
+        "issues[].plan_location",
+        "issues[].risk",
+        "issues[].next_action"
+      ],
+      "contract_hit_count": 9,
+      "generated": "{\"evidence_limitations\":[\"no plan view\",\"no spec view\",\"no drawing view\",\"no punch list view\",\"no RFI view\",\"no change order view\"],\"pm_gate\":[\"final decision requires plan/spec evidence and field verification\"],\"conclusions\":[\"final defect decision cannot be made without cited plan/spec evidence and field verification\"],\"issues\":[{\"requirement\":\"Electrical work must be installed in accordance with the approved plans and specifications.\",\"observation\":\"Electrical conduit is exposed and not properly secured to the wall.\",\"evidence\":\"The image shows exposed electrical conduit running vertically along the wall, with some conduit bending and not properly secured.\",\"plan_location\":\"Not visible in the image.\",\"risk\":\"Exposed and improperly secured conduit could lead to electrical hazards, damage, or failure to meet building codes.\",\"next_action\":\"Verify compliance with electrical installation standards and building codes. Document findings and escalate if necessary.\"},{\"requirement\":\"Electrical work must be installed in accordance with the approved plans and specifications.\",\"observation\":\"Electrical wiring is visible and not properly organized or protected.\",\"evidence\":\"The image shows multiple electrical wires protruding from an open electrical box, with no visible cover or protection.\",\"plan_location\":\"Not visible in the image.\",\"risk\":\"Exposed wiring could lead to electrical hazards, short circuits, or failure to meet building codes.\",\"next_action\":\"Verify compliance with electrical installation standards and building codes. Document findings and escalate if necessary.\"},{\"requirement\":\"Electrical work must be installed in accordance with the approved plans and specifications.\",\"observation\":\"Electrical work appears to be in progress, with incomplete installation.\",\"evidence\":\"The image shows an unfinished electrical installation with exposed wires and conduit.\",\"plan_location\":\"Not visible in the image.\",\"risk\":\"Incomplete installation could lead to delays, rework, or failure to meet project requirements.\",\"next_action\":\"Verify progress against project schedule and electrical installation standards. Document findings and escalate if necessary.\"}]}"
+    },
+    {
+      "id": "buili-field-18-field_observations",
+      "task": "field_observations",
+      "json_valid": true,
+      "contract_hits": [
+        "evidence_limitations",
+        "pm_gate",
+        "conclusions",
+        "issues",
+        "issues[].requirement",
+        "issues[].evidence",
+        "issues[].plan_location",
+        "issues[].risk",
+        "issues[].next_action"
+      ],
+      "contract_hit_count": 9,
+      "generated": "{\"evidence_limitations\":[\"no plan view\",\"no spec view\",\"no drawing view\",\"no punch list view\",\"no RFI view\",\"no change order view\"],\"pm_gate\":[\"final decision requires plan/spec evidence and field verification\"],\"conclusions\":[\"final defect decision cannot be made without cited plan/spec evidence and field verification\"],\"issues\":[{\"requirement\":\"Electrical work must be installed in accordance with the approved plans and specifications.\",\"observation\":\"Electrical conduit is exposed and not properly secured to the wall.\",\"evidence\":\"The image shows exposed electrical conduit running vertically along the wall, with some conduit bending and not properly secured.\",\"plan_location\":\"Not visible in the image.\",\"risk\":\"Exposed and improperly secured conduit could lead to electrical hazards, damage, or failure to meet building codes.\",\"next_action\":\"Verify compliance with electrical installation standards and building codes. Document findings and escalate if necessary.\"},{\"requirement\":\"Electrical work must be installed in accordance with the approved plans and specifications.\",\"observation\":\"Electrical wiring is visible and not properly organized or protected.\",\"evidence\":\"The image shows multiple electrical wires protruding from an open electrical box, with no visible cover or protection.\",\"plan_location\":\"Not visible in the image.\",\"risk\":\"Exposed wiring could lead to electrical hazards, short circuits, or failure to meet building codes.\",\"next_action\":\"Verify compliance with electrical installation standards and building codes. Document findings and escalate if necessary.\"},{\"requirement\":\"Electrical work must be installed in accordance with the approved plans and specifications.\",\"observation\":\"Electrical work appears to be in progress, with incomplete installation.\",\"evidence\":\"The image shows an unfinished electrical installation with exposed wires and conduit.\",\"plan_location\":\"Not visible in the image.\",\"risk\":\"Incomplete installation could lead to delays, rework, or failure to meet project requirements.\",\"next_action\":\"Verify progress against project schedule and electrical installation standards. Document findings and escalate if necessary.\"}]}"
+    },
+    {
+      "id": "open-inspection-routing-00008",
+      "task": "inspection_record_routing",
+      "json_valid": true,
+      "contract_hits": [
+        "evidence_chain",
+        "risk",
+        "recommended_action",
+        "human_review_required",
+        "final_defect_decision"
+      ],
+      "contract_hit_count": 5,
+      "generated": "{\"evidence_chain\": [], \"final_defect_decision\": false, \"human_review_required\": true, \"license_status\": \"government_open_data_terms_apply\", \"recommended_action\": \"Route partial/correction inspections to PM review with permit, trade, and follow-up evidence requirements.\", \"risk\": \"needs_review\", \"source\": \"Los Angeles DBS open inspections API\", \"source_url\": \"https://data.lacity.org/resource/9w5z-rg2h.json\", \"task\": \"inspection_record_routing\", \"trade\": \"building\"}"
+    },
+    {
+      "id": "buili-compare-01",
+      "task": "plan_field_comparison",
+      "json_valid": true,
+      "contract_hits": [
+        "evidence_limitations",
+        "conclusions",
+        "issues",
+        "issues[].requirement",
+        "issues[].evidence",
+        "issues[].plan_location",
+        "issues[].risk",
+        "issues[].next_action"
+      ],
+      "contract_hit_count": 8,
+      "generated": "{\"evidence_limitations\":[\"no plan location cited\"], \"conclusions\": [\"not enough evidence to close\"], \"issues\":[{\"requirement\":\"NEC 300.3(B) - raceways and cables shall be installed in a manner that avoids damage\",\"evidence\":\"conduit bending and pulling on the floor\",\"plan_location\":\"not cited\",\"risk\":\"physical damage to conduit\",\"next_action\":\"cite plan location for conduit bending and pulling on the floor\"}]}"
+    },
+    {
+      "id": "buili-field-21-field_evidence_gate",
+      "task": "field_evidence_gate",
+      "json_valid": true,
+      "contract_hits": [
+        "evidence_limitations",
+        "pm_gate",
+        "conclusions",
+        "issues",
+        "issues[].requirement",
+        "issues[].evidence",
+        "issues[].plan_location",
+        "issues[].risk",
+        "issues[].next_action"
+      ],
+      "contract_hit_count": 9,
+      "generated": "{\"evidence_limitations\":[\"no plan view\",\"no spec view\",\"no drawing view\",\"no punch list view\",\"no RFI view\",\"no change order view\"],\"pm_gate\":[\"final decision requires plan/spec evidence and field verification\"],\"conclusions\":[\"final defect decision cannot be made without cited plan/spec evidence and field verification\"],\"issues\":[{\"requirement\":\"Electrical work must be installed in accordance with the approved plans and specifications.\",\"observation\":\"Electrical conduit is exposed and not properly secured to the wall.\",\"evidence\":\"The image shows exposed electrical conduit running vertically along the wall, with some conduit bending and not properly secured.\",\"plan_location\":\"Not visible in the image.\",\"risk\":\"Exposed and improperly secured conduit could lead to electrical hazards, damage, or failure to meet building codes.\",\"next_action\":\"Verify compliance with electrical installation standards and building codes. Document findings and escalate if necessary.\"},{\"requirement\":\"Electrical work must be installed in accordance with the approved plans and specifications.\",\"observation\":\"Electrical wiring is visible and not properly organized or protected.\",\"evidence\":\"The image shows multiple electrical wires protruding from an open electrical box, with no visible cover or protection.\",\"plan_location\":\"Not visible in the image.\",\"risk\":\"Exposed wiring could lead to electrical hazards, short circuits, or failure to meet building codes.\",\"next_action\":\"Verify compliance with electrical installation standards and building codes. Document findings and escalate if necessary.\"},{\"requirement\":\"Electrical work must be installed in accordance with the approved plans and specifications.\",\"observation\":\"Electrical work appears to be in progress, with incomplete installation.\",\"evidence\":\"The image shows an unfinished electrical installation with exposed wires and conduit.\",\"plan_location\":\"Not visible in the image.\",\"risk\":\"Incomplete installation could lead to delays, rework, or failure to meet project requirements.\",\"next_action\":\"Verify progress against project schedule and electrical installation standards. Document findings and escalate if necessary.\"}]}"
+    }
+  ]
+}

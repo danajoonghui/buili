@@ -1,0 +1,37 @@
+{
+  "created_at": 1782392039,
+  "path": "data/processed/buili_vlm_plus_open/sft_dataset.jsonl",
+  "sha256": "08d635513a9a148d2eec93d1aaac0500e36ef1e155173e067e5a8c2d0bb6245c",
+  "rows": 261,
+  "train_rows": 226,
+  "eval_rows": 35,
+  "image_rows": 101,
+  "task_counts": {
+    "field_evidence_gate": 12,
+    "field_media_observation": 6,
+    "field_observations": 12,
+    "inspection_record_routing": 160,
+    "plan_classify": 9,
+    "plan_field_comparison": 6,
+    "plan_issue_candidates": 9,
+    "plan_pins": 9,
+    "plan_requirements": 9,
+    "public_pdf_requirement_extraction": 2,
+    "report_co": 9,
+    "report_punch": 9,
+    "report_rfi": 9
+  },
+  "sources": [
+    {
+      "path": "data/processed/buili_vlm/sft_dataset.jsonl",
+      "rows": 93,
+      "role": "pm_review_contract"
+    },
+    {
+      "path": "data/processed/open_construction_corpus/sft_dataset.jsonl",
+      "rows": 168,
+      "role": "public_government_inspection_and_field_weak_labels"
+    }
+  ],
+  "governance": "Combined dataset keeps public source attribution in upstream manifests. CC-BY-NC/gated sources are excluded unless separately licensed."
+}

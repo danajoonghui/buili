@@ -12,8 +12,13 @@ node_modules/
 dist/
 build/
 data/raw/*
+data/open_corpus/
 data/processed/*
 data/artifacts/*
+data/artifacts/*/README.md
+data/artifacts/*/adapter_config.json
+data/artifacts/*/adapter_model.safetensors
+data/artifacts/*/processor/
 data/storage/
 !data/raw/.gitkeep
 !data/processed/.gitkeep
@@ -22,6 +27,10 @@ data/storage/
 !data/processed/buili_ai_stack/**
 !data/processed/buili_vlm/
 !data/processed/buili_vlm/**
+!data/processed/open_construction_corpus/
+!data/processed/open_construction_corpus/**
+!data/processed/buili_vlm_plus_open/
+!data/processed/buili_vlm_plus_open/**
 !data/artifacts/.gitkeep
 !data/artifacts/layout_smoke/
 !data/artifacts/layout_smoke/**
@@ -34,6 +43,10 @@ data/storage/
 !data/artifacts/buili_internvl35_14b_lora/training_summary.json
 !data/artifacts/buili_internvl35_14b_lora/adapter_manifest.json
 !data/artifacts/buili_internvl35_14b_lora/generation_qa.json
+!data/artifacts/buili_internvl35_14b_plus_open_lora/
+!data/artifacts/buili_internvl35_14b_plus_open_lora/training_summary.json
+!data/artifacts/buili_internvl35_14b_plus_open_lora/adapter_manifest.json
+!data/artifacts/buili_internvl35_14b_plus_open_lora/generation_qa.json
 *.db
 *.sqlite
 *.sqlite3
