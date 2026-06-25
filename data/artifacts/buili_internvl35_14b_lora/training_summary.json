@@ -1,0 +1,170 @@
+{
+  "status": "trained",
+  "model_family": "InternVL3.5",
+  "base_model_id": "OpenGVLab/InternVL3_5-14B-HF",
+  "teacher_model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+  "adapter_path": "data/artifacts/buili_internvl35_14b_lora",
+  "gpu": {
+    "cuda_visible_devices": "7",
+    "required_device": "7",
+    "policy": "single_gpu_only"
+  },
+  "torch_device": "NVIDIA RTX A6000",
+  "quantization": "4bit",
+  "lora": {
+    "r": 16,
+    "alpha": 32,
+    "target_modules": [
+      "down_proj",
+      "gate_proj",
+      "k_proj",
+      "o_proj",
+      "q_proj",
+      "up_proj",
+      "v_proj"
+    ],
+    "layers_to_transform": "all"
+  },
+  "dataset": "data/processed/buili_vlm/sft_dataset.jsonl",
+  "train_rows": 79,
+  "eval_rows": 14,
+  "epochs": 2,
+  "global_steps": 15,
+  "train_history": [
+    {
+      "epoch": 1,
+      "global_step": 1,
+      "train_loss": 2.079893983900547,
+      "learning_rate": 6e-05
+    },
+    {
+      "epoch": 1,
+      "global_step": 2,
+      "train_loss": 2.432973027229309,
+      "learning_rate": 5.912825452278156e-05
+    },
+    {
+      "epoch": 1,
+      "global_step": 3,
+      "train_loss": 2.1776570603251457,
+      "learning_rate": 5.6563680769596294e-05
+    },
+    {
+      "epoch": 1,
+      "global_step": 4,
+      "train_loss": 2.2570228427648544,
+      "learning_rate": 5.245532244513303e-05
+    },
+    {
+      "epoch": 1,
+      "global_step": 5,
+      "train_loss": 2.2862913608551025,
+      "learning_rate": 4.704194240193467e-05
+    },
+    {
+      "epoch": 1,
+      "global_step": 6,
+      "train_loss": 2.2682200595736504,
+      "learning_rate": 4.063814661127607e-05
+    },
+    {
+      "epoch": 1,
+      "global_step": 7,
+      "train_loss": 1.1995939761400223,
+      "learning_rate": 3.361610040765969e-05
+    },
+    {
+      "epoch": 2,
+      "global_step": 8,
+      "train_loss": 0.8376636132597923,
+      "learning_rate": 2.6383899592340312e-05
+    },
+    {
+      "epoch": 2,
+      "global_step": 9,
+      "train_loss": 1.9135843887925148,
+      "learning_rate": 1.936185338872393e-05
+    },
+    {
+      "epoch": 2,
+      "global_step": 10,
+      "train_loss": 1.9694921970367432,
+      "learning_rate": 1.2958057598065328e-05
+    },
+    {
+      "epoch": 2,
+      "global_step": 11,
+      "train_loss": 2.0217274576425552,
+      "learning_rate": 7.544677554866964e-06
+    },
+    {
+      "epoch": 2,
+      "global_step": 12,
+      "train_loss": 1.8844929933547974,
+      "learning_rate": 3.436319230403706e-06
+    },
+    {
+      "epoch": 2,
+      "global_step": 13,
+      "train_loss": 1.8226297497749329,
+      "learning_rate": 8.717454772184397e-07
+    },
+    {
+      "epoch": 2,
+      "global_step": 14,
+      "train_loss": 1.9357160776853561,
+      "learning_rate": 0.0
+    },
+    {
+      "epoch": 2,
+      "global_step": 15,
+      "train_loss": 0.30375948548316956,
+      "learning_rate": 8.717454772184363e-07
+    }
+  ],
+  "eval_loss": 2.197899750300816,
+  "json_valid_rate": 0.0,
+  "generation_eval": [
+    {
+      "id": "field-16-field_observations",
+      "task": "field_observations",
+      "expected": "{\"evidence_quality\": \"partial\", \"field_report\": {\"not_usable_for\": [\"final defect decision\", \"device count verification\"], \"summary\": \"The image supports rough electrical activity detection, but it is not sufficient to close E1.1 plan compliance.\", \"usable_for\": [\"evidence intake\", \"rough-in activity detection\"]}, \"final_defect_decision\": false, \"human_review_required\": true, \"observations\": [{\"condition\": \"visible unfinished wall cavity\", \"confidence\": 0.82, \"element\": \"rough_opening\"}, {\"condition\": \"visible wiring run in open framing\", \"confidence\": 0.76, \"element\": \"cable_bundle\"}, {\"condition\": \"requires close-up verification\", \"confidence\": 0.64, \"element\": \"junction_box_or_device_location\"}], \"source\": \"public_domain_field_photo\", \"task\": \"field_observations\", \"trade\": \"electrical\"}",
+      "generated": "```json\n{\n  \"observations\": [\n    {\n      \"requirement\": \"Electrical conduit must be properly secured and protected at all penetrations through walls.\",\n      \"field_evidence\": \"Conduit is visible running vertically through the wall, but the penetration area lacks visible sealing or protection.\",\n      \"plan_location\": \"Wall penetration area near floor level.\",\n      \"risk\": \"Potential water ingress or damage to conduit.\",\n      \"next_action\": \"Verify sealing and protection measures per specs.\"\n    },\n    {\n      \"requirement\": \"Wiring must be organized and protected within raceways or conduit.\",\n      \"field_evidence\": \"Exposed wiring at the bottom right, not enclosed in a raceway.\",\n      \"plan_location\": \"Bottom right of the image.\",\n      \"risk\": \"Risk of electrical shock or damage.\",\n      \"next_action\": \"Ensure all wiring is properly enclosed and secured.\"\n    },\n    {\n      \"requirement\": \"Electrical boxes must be flush with wall surfaces.\",\n      \"field_evidence\": \"Electrical box on the right wall appears recessed but not flush.\",\n      \"plan_location\": \"Right wall, near floor level.\",\n      \"risk\": \"Aesthetic and potential safety issues.\",\n      \"next_action\": \"Check"
+    },
+    {
+      "id": "field-17-field_evidence_gate",
+      "task": "field_evidence_gate",
+      "expected": "{\"final_defect_decision\": false, \"human_review_required\": true, \"issue_readiness\": \"needs_more_evidence\", \"missing_evidence\": [\"sheet-specific room reference\", \"close-up of outlet/device label\", \"before-cover inspection context\"], \"pm_gate\": {\"minimum_acceptance\": [\"room name\", \"sheet pin\", \"device close-up\", \"trade foreman confirmation\"], \"status\": \"blocked_until_more_evidence\"}, \"recommended_action\": \"Capture room-tagged close-up photos before approving issue closure.\", \"source\": \"public_domain_field_photo\", \"task\": \"field_evidence_gate\", \"trade\": \"electrical\"}",
+      "generated": "```json\n{\n  \"observations\": [\n    {\n      \"requirement\": \"Electrical conduit must be properly secured and protected at all penetrations through walls.\",\n      \"field_evidence\": \"Conduit is visible running vertically through the wall, but the penetration area lacks visible sealing or protection.\",\n      \"plan_location\": \"Wall penetration area near floor level.\",\n      \"risk\": \"Potential water ingress or damage to conduit.\",\n      \"next_action\": \"Verify sealing and protection measures per specs.\"\n    },\n    {\n      \"requirement\": \"Wiring must be organized and protected within raceways or conduit.\",\n      \"field_evidence\": \"Exposed wiring at the bottom right, not enclosed in a raceway.\",\n      \"plan_location\": \"Bottom right of the image.\",\n      \"risk\": \"Risk of electrical shock or damage.\",\n      \"next_action\": \"Ensure all wiring is properly enclosed and secured.\"\n    },\n    {\n      \"requirement\": \"Electrical boxes must be flush with wall surfaces.\",\n      \"field_evidence\": \"Electrical box on the right wall appears recessed but not flush.\",\n      \"plan_location\": \"Right wall, near floor level.\",\n      \"risk\": \"Aesthetic and potential safety issues.\",\n      \"next_action\": \"Check"
+    },
+    {
+      "id": "field-18-field_observations",
+      "task": "field_observations",
+      "expected": "{\"evidence_quality\": \"partial\", \"field_report\": {\"not_usable_for\": [\"final defect decision\", \"device count verification\"], \"summary\": \"The image supports rough electrical activity detection, but it is not sufficient to close E1.1 plan compliance.\", \"usable_for\": [\"evidence intake\", \"rough-in activity detection\"]}, \"final_defect_decision\": false, \"human_review_required\": true, \"observations\": [{\"condition\": \"visible unfinished wall cavity\", \"confidence\": 0.82, \"element\": \"rough_opening\"}, {\"condition\": \"visible wiring run in open framing\", \"confidence\": 0.76, \"element\": \"cable_bundle\"}, {\"condition\": \"requires close-up verification\", \"confidence\": 0.64, \"element\": \"junction_box_or_device_location\"}], \"source\": \"public_domain_field_photo\", \"task\": \"field_observations\", \"trade\": \"electrical\"}",
+      "generated": "```json\n{\n  \"observations\": [\n    {\n      \"requirement\": \"Electrical conduit must be properly secured and protected at all penetrations through walls.\",\n      \"field_evidence\": \"Conduit is visible running vertically through the wall, but the penetration area lacks visible sealing or protection.\",\n      \"plan_location\": \"Wall penetration area near floor level.\",\n      \"risk\": \"Potential water ingress or damage to conduit.\",\n      \"next_action\": \"Verify sealing and protection measures per specs.\"\n    },\n    {\n      \"requirement\": \"Wiring must be organized and protected within raceways or conduit.\",\n      \"field_evidence\": \"Exposed wiring at the bottom right, not enclosed in a raceway.\",\n      \"plan_location\": \"Bottom right of the image.\",\n      \"risk\": \"Risk of electrical shock or damage.\",\n      \"next_action\": \"Ensure all wiring is properly enclosed and secured.\"\n    },\n    {\n      \"requirement\": \"Electrical boxes must be flush with wall surfaces.\",\n      \"field_evidence\": \"Electrical box on the right wall appears recessed but not flush.\",\n      \"plan_location\": \"Right wall, near floor level.\",\n      \"risk\": \"Aesthetic and potential safety issues.\",\n      \"next_action\": \"Check"
+    },
+    {
+      "id": "field-19-field_evidence_gate",
+      "task": "field_evidence_gate",
+      "expected": "{\"final_defect_decision\": false, \"human_review_required\": true, \"issue_readiness\": \"needs_more_evidence\", \"missing_evidence\": [\"sheet-specific room reference\", \"close-up of outlet/device label\", \"before-cover inspection context\"], \"pm_gate\": {\"minimum_acceptance\": [\"room name\", \"sheet pin\", \"device close-up\", \"trade foreman confirmation\"], \"status\": \"blocked_until_more_evidence\"}, \"recommended_action\": \"Capture room-tagged close-up photos before approving issue closure.\", \"source\": \"public_domain_field_photo\", \"task\": \"field_evidence_gate\", \"trade\": \"electrical\"}",
+      "generated": "```json\n{\n  \"observations\": [\n    {\n      \"requirement\": \"Electrical conduit must be properly secured and protected at all penetrations through walls.\",\n      \"field_evidence\": \"Conduit is visible running vertically through the wall, but the penetration area lacks visible sealing or protection.\",\n      \"plan_location\": \"Wall penetration area near floor level.\",\n      \"risk\": \"Potential water ingress or damage to conduit.\",\n      \"next_action\": \"Verify sealing and protection measures per specs.\"\n    },\n    {\n      \"requirement\": \"Wiring must be organized and protected within raceways or conduit.\",\n      \"field_evidence\": \"Exposed wiring at the bottom right, not enclosed in a raceway.\",\n      \"plan_location\": \"Bottom right of the image.\",\n      \"risk\": \"Risk of electrical shock or damage.\",\n      \"next_action\": \"Ensure all wiring is properly enclosed and secured.\"\n    },\n    {\n      \"requirement\": \"Electrical boxes must be flush with wall surfaces.\",\n      \"field_evidence\": \"Electrical box on the right wall appears recessed but not flush.\",\n      \"plan_location\": \"Right wall, near floor level.\",\n      \"risk\": \"Aesthetic and potential safety issues.\",\n      \"next_action\": \"Check"
+    }
+  ],
+  "silicon_valley_output_contract": {
+    "required_sections": [
+      "executive_summary",
+      "requirement",
+      "observation",
+      "evidence_chain",
+      "risk",
+      "recommended_action",
+      "rfi_draft",
+      "punch_list_row",
+      "change_order_evidence",
+      "decision_gate"
+    ],
+    "business_standard": "Outputs must be PM-review-ready issue packages, not loose captions. Every candidate needs plan citation, field evidence status, risk, next action, RFI/punch/CO routing, and human verification gate."
+  },
+  "trained_at": 1782389824,
+  "scope_note": "This is a real 14B VLM LoRA domain-adaptation run on public Buili drawing and field-evidence data. Production readiness still requires pilot customer data, larger labeled field media, and external QA before market claims."
+}

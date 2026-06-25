@@ -1,0 +1,81 @@
+{
+  "dataset": "buili_qwen3_vl_sft",
+  "rows": 93,
+  "sources": {
+    "utah_plan": {
+      "name": "Utah.gov Cooper Residence public electrical plan PDF render",
+      "url": "https://www.utah.gov/pmn/files/1020117.pdf",
+      "license_note": "Publicly accessible permit drawing; use source attribution in demos."
+    },
+    "wikimedia_field_photo": {
+      "name": "Wikimedia Commons Installing electrical wiring.jpg",
+      "url": "https://commons.wikimedia.org/wiki/File:Installing_electrical_wiring.jpg",
+      "license_note": "Public-domain field wiring photograph from Wikimedia Commons."
+    }
+  },
+  "images": {
+    "utah-e11-electrical-plan": {
+      "path": "data/processed/buili_vlm/images/utah-e11-electrical-plan.jpg",
+      "sha256": "bc5a4c5d6130e24f14be59a484a06fc69a6d4f1414e0872f1c86118a34675437",
+      "width": 3111,
+      "height": 2074
+    },
+    "utah-e11-page-1-thumb": {
+      "path": "data/processed/buili_vlm/images/utah-e11-page-1-thumb.jpg",
+      "sha256": "db0e8b40e7440e777d02ef5529e5dee81c63e19c0683f529c4273a7675dbfaae",
+      "width": 1556,
+      "height": 1037
+    },
+    "utah-e11-page-2-thumb": {
+      "path": "data/processed/buili_vlm/images/utah-e11-page-2-thumb.jpg",
+      "sha256": "0a3e09c50b0e518217d0825ed4776e30f706eb97c7d475dda60572813ef0561e",
+      "width": 1556,
+      "height": 1037
+    },
+    "utah-e11-page-3-thumb": {
+      "path": "data/processed/buili_vlm/images/utah-e11-page-3-thumb.jpg",
+      "sha256": "46dadb2179fbf9a2533e313f64571816fb5122453021fcf8e0654f65844074c7",
+      "width": 1556,
+      "height": 1037
+    },
+    "utah-e11-page-4-thumb": {
+      "path": "data/processed/buili_vlm/images/utah-e11-page-4-thumb.jpg",
+      "sha256": "ae60103e9124c01ba12642f841bed24e1ed658a3a128f089b1c7e5247d59f3c6",
+      "width": 1556,
+      "height": 1037
+    },
+    "utah-e11-page-5-thumb": {
+      "path": "data/processed/buili_vlm/images/utah-e11-page-5-thumb.jpg",
+      "sha256": "d9c82da61c823ead809e5c69f88f3a22b849a65995f48874ae08373cf080fee9",
+      "width": 1556,
+      "height": 1037
+    },
+    "utah-e11-page-6-thumb": {
+      "path": "data/processed/buili_vlm/images/utah-e11-page-6-thumb.jpg",
+      "sha256": "2c50f69daa86f32969ac39b37e03b96419d718625abb2511b9a16883d251a88e",
+      "width": 1556,
+      "height": 1037
+    },
+    "utah-e11-page-7-thumb": {
+      "path": "data/processed/buili_vlm/images/utah-e11-page-7-thumb.jpg",
+      "sha256": "feae32381281f3d1d63ff962aa368d6279c9ae0eadeda9bbddc4776b70c3f111",
+      "width": 1556,
+      "height": 1037
+    },
+    "utah-e11-page-8-thumb": {
+      "path": "data/processed/buili_vlm/images/utah-e11-page-8-thumb.jpg",
+      "sha256": "8e17882d3c47df5b89f1160b235035a54a64ffdf36edf1248138a377ae5045a0",
+      "width": 1556,
+      "height": 1037
+    },
+    "field_wiring": {
+      "path": "data/processed/buili_vlm/images/field_wiring.jpg",
+      "sha256": "5d226a6eb53e2777b1d77fd8488ad9a7996733a72862cd7714d115d9e73e3af1",
+      "width": 1484,
+      "height": 2448
+    }
+  },
+  "train_rows": 79,
+  "eval_rows": 14,
+  "sha256": "ba2616dea7561ac18de21da3186607b6c6b60fc0ad870cd8019af7e38c9e0d5d"
+}

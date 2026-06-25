@@ -22,7 +22,13 @@ dependencies:
       - joblib
       - datasets
       - huggingface_hub
+      - git+https://github.com/huggingface/transformers
+      - accelerate
+      - peft
+      - bitsandbytes
+      - qwen-vl-utils
+      - sentence-transformers
+      - safetensors
       - tqdm
       - pytest
       - ruff
-

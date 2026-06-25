@@ -1,0 +1,79 @@
+{
+  "status": "evaluated",
+  "model_family": "InternVL3.5",
+  "base_model_id": "OpenGVLab/InternVL3_5-14B-HF",
+  "adapter_dir": "data/artifacts/buili_internvl35_14b_lora",
+  "gpu": {
+    "cuda_visible_devices": "7",
+    "required_device": "7",
+    "policy": "single_gpu_only"
+  },
+  "torch_device": "NVIDIA RTX A6000",
+  "max_eval_samples": 6,
+  "max_new_tokens": 768,
+  "json_valid_rate": 1.0,
+  "avg_contract_hit_count": 1.0,
+  "evaluated_at": 1782390126,
+  "results": [
+    {
+      "id": "field-16-field_observations",
+      "task": "field_observations",
+      "json_valid": true,
+      "contract_hits": [
+        "observations"
+      ],
+      "contract_hit_count": 1,
+      "generated": "{\n  \"observations\": [\n    {\n      \"requirement\": \"Electrical conduit protection\",\n      \"field_evidence\": \"Conduit bending and securing in progress\",\n      \"plan_location\": \"Wall conduit routing\",\n      \"risk\": \"Improper conduit bending may lead to damage or poor connections\",\n      \"next_action\": \"Verify conduit bending meets plan specs and code compliance\"\n    },\n    {\n      \"requirement\": \"Wire management\",\n      \"field_evidence\": \"Exposed wires at junction box\",\n      \"plan_location\": \"Junction box installation\",\n      \"risk\": \"Exposed wires may pose a safety hazard and risk of damage\",\n      \"next_action\": \"Ensure wires are properly insulated and secured within the box\"\n    }\n  ],\n  \"evidence_limitations\": [\n    \"Incomplete view of conduit routing\",\n    \"Limited visibility of junction box wiring\"\n  ],\n  \"pm_gate\": \"Final inspection required for conduit and junction box compliance\",\n  \"cannot_conclude\": [\n    \"Full compliance with electrical plan\",\n    \"Safety certification status\"\n  ]\n}"
+    },
+    {
+      "id": "field-17-field_evidence_gate",
+      "task": "field_evidence_gate",
+      "json_valid": true,
+      "contract_hits": [
+        "observations"
+      ],
+      "contract_hit_count": 1,
+      "generated": "{\n  \"observations\": [\n    {\n      \"requirement\": \"Electrical conduit protection\",\n      \"field_evidence\": \"Conduit bending and securing in progress\",\n      \"plan_location\": \"Wall conduit routing\",\n      \"risk\": \"Improper conduit bending may lead to damage or poor connections\",\n      \"next_action\": \"Verify conduit bending meets plan specs and code compliance\"\n    },\n    {\n      \"requirement\": \"Wire management\",\n      \"field_evidence\": \"Exposed wires at junction box\",\n      \"plan_location\": \"Junction box installation\",\n      \"risk\": \"Exposed wires may pose a safety hazard and risk of damage\",\n      \"next_action\": \"Ensure wires are properly insulated and secured within the box\"\n    }\n  ],\n  \"evidence_limitations\": [\n    \"Incomplete view of conduit routing\",\n    \"Limited visibility of junction box wiring\"\n  ],\n  \"pm_gate\": \"Final inspection required for conduit and junction box compliance\",\n  \"cannot_conclude\": [\n    \"Full compliance with electrical plan\",\n    \"Safety certification status\"\n  ]\n}"
+    },
+    {
+      "id": "field-18-field_observations",
+      "task": "field_observations",
+      "json_valid": true,
+      "contract_hits": [
+        "observations"
+      ],
+      "contract_hit_count": 1,
+      "generated": "{\n  \"observations\": [\n    {\n      \"requirement\": \"Electrical conduit protection\",\n      \"field_evidence\": \"Conduit bending and securing in progress\",\n      \"plan_location\": \"Wall conduit routing\",\n      \"risk\": \"Improper conduit bending may lead to damage or poor connections\",\n      \"next_action\": \"Verify conduit bending meets plan specs and code compliance\"\n    },\n    {\n      \"requirement\": \"Wire management\",\n      \"field_evidence\": \"Exposed wires at junction box\",\n      \"plan_location\": \"Junction box installation\",\n      \"risk\": \"Exposed wires may pose a safety hazard and risk of damage\",\n      \"next_action\": \"Ensure wires are properly insulated and secured within the box\"\n    }\n  ],\n  \"evidence_limitations\": [\n    \"Incomplete view of conduit routing\",\n    \"Limited visibility of junction box wiring\"\n  ],\n  \"pm_gate\": \"Final inspection required for conduit and junction box compliance\",\n  \"cannot_conclude\": [\n    \"Full compliance with electrical plan\",\n    \"Safety certification status\"\n  ]\n}"
+    },
+    {
+      "id": "field-19-field_evidence_gate",
+      "task": "field_evidence_gate",
+      "json_valid": true,
+      "contract_hits": [
+        "observations"
+      ],
+      "contract_hit_count": 1,
+      "generated": "{\n  \"observations\": [\n    {\n      \"requirement\": \"Electrical conduit protection\",\n      \"field_evidence\": \"Conduit bending and securing in progress\",\n      \"plan_location\": \"Wall conduit routing\",\n      \"risk\": \"Improper conduit bending may lead to damage or poor connections\",\n      \"next_action\": \"Verify conduit bending meets plan specs and code compliance\"\n    },\n    {\n      \"requirement\": \"Wire management\",\n      \"field_evidence\": \"Exposed wires at junction box\",\n      \"plan_location\": \"Junction box installation\",\n      \"risk\": \"Exposed wires may pose a safety hazard and risk of damage\",\n      \"next_action\": \"Ensure wires are properly insulated and secured within the box\"\n    }\n  ],\n  \"evidence_limitations\": [\n    \"Incomplete view of conduit routing\",\n    \"Limited visibility of junction box wiring\"\n  ],\n  \"pm_gate\": \"Final inspection required for conduit and junction box compliance\",\n  \"cannot_conclude\": [\n    \"Full compliance with electrical plan\",\n    \"Safety certification status\"\n  ]\n}"
+    },
+    {
+      "id": "field-20-field_observations",
+      "task": "field_observations",
+      "json_valid": true,
+      "contract_hits": [
+        "observations"
+      ],
+      "contract_hit_count": 1,
+      "generated": "{\n  \"observations\": [\n    {\n      \"requirement\": \"Electrical conduit protection\",\n      \"field_evidence\": \"Conduit bending and securing in progress\",\n      \"plan_location\": \"Wall conduit routing\",\n      \"risk\": \"Improper conduit bending may lead to damage or poor connections\",\n      \"next_action\": \"Verify conduit bending meets plan specs and code compliance\"\n    },\n    {\n      \"requirement\": \"Wire management\",\n      \"field_evidence\": \"Exposed wires at junction box\",\n      \"plan_location\": \"Junction box installation\",\n      \"risk\": \"Exposed wires may pose a safety hazard and risk of damage\",\n      \"next_action\": \"Ensure wires are properly insulated and secured within the box\"\n    }\n  ],\n  \"evidence_limitations\": [\n    \"Incomplete view of conduit routing\",\n    \"Limited visibility of junction box wiring\"\n  ],\n  \"pm_gate\": \"Final inspection required for conduit and junction box compliance\",\n  \"cannot_conclude\": [\n    \"Full compliance with electrical plan\",\n    \"Safety certification status\"\n  ]\n}"
+    },
+    {
+      "id": "field-21-field_evidence_gate",
+      "task": "field_evidence_gate",
+      "json_valid": true,
+      "contract_hits": [
+        "observations"
+      ],
+      "contract_hit_count": 1,
+      "generated": "{\n  \"observations\": [\n    {\n      \"requirement\": \"Electrical conduit protection\",\n      \"field_evidence\": \"Conduit bending and securing in progress\",\n      \"plan_location\": \"Wall conduit routing\",\n      \"risk\": \"Improper conduit bending may lead to damage or poor connections\",\n      \"next_action\": \"Verify conduit bending meets plan specs and code compliance\"\n    },\n    {\n      \"requirement\": \"Wire management\",\n      \"field_evidence\": \"Exposed wires at junction box\",\n      \"plan_location\": \"Junction box installation\",\n      \"risk\": \"Exposed wires may pose a safety hazard and risk of damage\",\n      \"next_action\": \"Ensure wires are properly insulated and secured within the box\"\n    }\n  ],\n  \"evidence_limitations\": [\n    \"Incomplete view of conduit routing\",\n    \"Limited visibility of junction box wiring\"\n  ],\n  \"pm_gate\": \"Final inspection required for conduit and junction box compliance\",\n  \"cannot_conclude\": [\n    \"Full compliance with electrical plan\",\n    \"Safety certification status\"\n  ]\n}"
+    }
+  ]
+}

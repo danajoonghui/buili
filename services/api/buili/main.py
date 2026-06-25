@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
-from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import uvicorn
@@ -39,10 +39,10 @@ from .reports import build_markdown_rfi, build_report
 from .schemas import (
     AnalyzeRequest,
     DocumentOut,
-    ObservationOut,
     IssueOut,
     IssuePatch,
     JobOut,
+    ObservationOut,
     OverlayOut,
     ProjectCreate,
     ProjectOut,
@@ -95,7 +95,9 @@ def _validate_upload_request(filename: str, mime: str, size: int, kind: str) -> 
     if size > settings.max_upload_bytes:
         raise HTTPException(status_code=413, detail="upload exceeds maximum allowed size")
     if kind in {"document", "submittal"} and suffix not in DOCUMENT_EXTENSIONS:
-        raise HTTPException(status_code=415, detail=f"unsupported document type: {suffix or 'none'}")
+        raise HTTPException(
+            status_code=415, detail=f"unsupported document type: {suffix or 'none'}"
+        )
     if kind == "media" and suffix not in MEDIA_EXTENSIONS:
         raise HTTPException(status_code=415, detail=f"unsupported media type: {suffix or 'none'}")
     if mime and "/" not in mime:
@@ -123,7 +125,9 @@ app.add_middleware(
 if (WEB_PUBLIC_ROOT / "plans").exists():
     app.mount("/plans", StaticFiles(directory=WEB_PUBLIC_ROOT / "plans"), name="plans")
 if (WEB_PUBLIC_ROOT / "site-media").exists():
-    app.mount("/site-media", StaticFiles(directory=WEB_PUBLIC_ROOT / "site-media"), name="site-media")
+    app.mount(
+        "/site-media", StaticFiles(directory=WEB_PUBLIC_ROOT / "site-media"), name="site-media"
+    )
 
 
 @app.middleware("http")
@@ -140,7 +144,9 @@ def web_root() -> FileResponse:
 
 @app.get("/manifest.webmanifest", include_in_schema=False)
 def web_manifest() -> FileResponse:
-    return FileResponse(WEB_PUBLIC_ROOT / "manifest.webmanifest", media_type="application/manifest+json")
+    return FileResponse(
+        WEB_PUBLIC_ROOT / "manifest.webmanifest", media_type="application/manifest+json"
+    )
 
 
 @app.get("/sw.js", include_in_schema=False)
@@ -161,6 +167,58 @@ def icon_svg() -> FileResponse:
 @app.get("/healthz")
 def healthz() -> dict[str, object]:
     return {"status": "ok", "service": "buili-api", "gpu": gpu_policy()}
+
+
+def _read_artifact_json(path: Path) -> dict[str, object] | None:
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+
+
+def _vlm_training_status() -> dict[str, object]:
+    artifact_dir = REPO_ROOT / "data" / "artifacts" / "buili_internvl35_14b_lora"
+    summary = _read_artifact_json(artifact_dir / "training_summary.json")
+    manifest = _read_artifact_json(artifact_dir / "adapter_manifest.json")
+    generation_qa = _read_artifact_json(artifact_dir / "generation_qa.json")
+    if not summary:
+        return {
+            "status": "not_trained",
+            "model_family": "InternVL3.5",
+            "base_model_id": "OpenGVLab/InternVL3_5-14B-HF",
+            "teacher_model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+            "gpu_policy": gpu_policy(),
+            "detail": (
+                "Run HF_HOME=/SSD/guest/chojoonghui/hf_cache CUDA_VISIBLE_DEVICES=7 "
+                "conda run -n cjh_buili python ml/train_internvl35_lora.py"
+            ),
+        }
+
+    qa_rate = None
+    qa_samples = 0
+    if generation_qa:
+        qa_rate = generation_qa.get("json_valid_rate")
+        qa_samples = int(generation_qa.get("max_eval_samples") or 0)
+    return {
+        "status": summary.get("status", "trained"),
+        "model_family": summary.get("model_family"),
+        "base_model_id": summary.get("base_model_id"),
+        "teacher_model_id": summary.get("teacher_model_id"),
+        "adapter_path": summary.get("adapter_path"),
+        "adapter_files": manifest.get("adapter_files") if manifest else [],
+        "quantization": summary.get("quantization"),
+        "train_rows": summary.get("train_rows"),
+        "eval_rows": summary.get("eval_rows"),
+        "global_steps": summary.get("global_steps"),
+        "eval_loss": summary.get("eval_loss"),
+        "raw_generation_json_valid_rate": summary.get("json_valid_rate"),
+        "production_prompt_json_valid_rate": qa_rate,
+        "production_prompt_eval_samples": qa_samples,
+        "gpu_policy": summary.get("gpu") or gpu_policy(),
+        "scope_note": summary.get("scope_note"),
+    }
 
 
 @app.get("/v1/projects", response_model=list[ProjectOut])
@@ -192,10 +250,7 @@ def presign_upload(
         raise HTTPException(status_code=404, detail="project not found")
     filename = _validate_upload_request(payload.filename, payload.mime, payload.size, payload.kind)
     upload_id = new_id("upl")
-    r2_key = (
-        f"org/{project.org_id}/project/{project.project_id}/raw/{upload_id}_"
-        f"{filename}"
-    )
+    r2_key = f"org/{project.org_id}/project/{project.project_id}/raw/{upload_id}_{filename}"
     intent = UploadIntent(
         upload_id=upload_id,
         project_id=project.project_id,
@@ -331,7 +386,11 @@ def list_documents(project_id: str, session: Session = Depends(get_session)) -> 
     if not session.get(Project, project_id):
         raise HTTPException(status_code=404, detail="project not found")
     return list(
-        session.scalars(select(Document).where(Document.project_id == project_id).order_by(Document.created_at.desc())).all()
+        session.scalars(
+            select(Document)
+            .where(Document.project_id == project_id)
+            .order_by(Document.created_at.desc())
+        ).all()
     )
 
 
@@ -340,12 +399,18 @@ def list_media(project_id: str, session: Session = Depends(get_session)) -> list
     if not session.get(Project, project_id):
         raise HTTPException(status_code=404, detail="project not found")
     return list(
-        session.scalars(select(SiteMedia).where(SiteMedia.project_id == project_id).order_by(SiteMedia.created_at.desc())).all()
+        session.scalars(
+            select(SiteMedia)
+            .where(SiteMedia.project_id == project_id)
+            .order_by(SiteMedia.created_at.desc())
+        ).all()
     )
 
 
 @app.get("/v1/projects/{project_id}/observations", response_model=list[ObservationOut])
-def list_observations(project_id: str, session: Session = Depends(get_session)) -> list[Observation]:
+def list_observations(
+    project_id: str, session: Session = Depends(get_session)
+) -> list[Observation]:
     media_ids = select(SiteMedia.media_id).where(SiteMedia.project_id == project_id)
     if not session.get(Project, project_id):
         raise HTTPException(status_code=404, detail="project not found")
@@ -359,18 +424,27 @@ def list_observations(project_id: str, session: Session = Depends(get_session)) 
 
 
 @app.get("/v1/projects/{project_id}/technology-status", response_model=list[TechnologyStatusOut])
-def technology_status(project_id: str, session: Session = Depends(get_session)) -> list[TechnologyStatusOut]:
+def technology_status(
+    project_id: str, session: Session = Depends(get_session)
+) -> list[TechnologyStatusOut]:
     if not session.get(Project, project_id):
         raise HTTPException(status_code=404, detail="project not found")
     docs = session.scalars(select(Document).where(Document.project_id == project_id)).all()
-    chunks = session.scalars(select(SpecChunk).join(Document).where(Document.project_id == project_id)).all()
+    chunks = session.scalars(
+        select(SpecChunk).join(Document).where(Document.project_id == project_id)
+    ).all()
     media = session.scalars(select(SiteMedia).where(SiteMedia.project_id == project_id)).all()
     media_ids = select(SiteMedia.media_id).where(SiteMedia.project_id == project_id)
-    observations = session.scalars(select(Observation).where(Observation.media_id.in_(media_ids))).all()
+    observations = session.scalars(
+        select(Observation).where(Observation.media_id.in_(media_ids))
+    ).all()
     issues = session.scalars(select(Issue).where(Issue.project_id == project_id)).all()
     jobs = session.scalars(select(Job).where(Job.project_id == project_id)).all()
     frames = session.scalars(select(Frame).where(Frame.media_id.in_(media_ids))).all()
-    return [
+    vlm = _vlm_training_status()
+    vlm_trained = vlm.get("status") == "trained"
+    vlm_qa_rate = vlm.get("production_prompt_json_valid_rate")
+    statuses = [
         TechnologyStatusOut(
             key="pdf_rag",
             label="PDF drawing/spec RAG analysis",
@@ -383,30 +457,58 @@ def technology_status(project_id: str, session: Session = Depends(get_session)) 
             label="Field photo/video construction element recognition",
             status="ready" if media and observations else "needs_media",
             evidence_count=len(observations),
-            summary=f"{len(media)} media files, {len(frames)} derived frames, {len(observations)} recognized observations.",
+            summary=(
+                f"{len(media)} media files, {len(frames)} derived frames, "
+                f"{len(observations)} recognized observations."
+            ),
         ),
         TechnologyStatusOut(
             key="mismatch_candidates",
             label="Drawing-field mismatch candidate generation",
             status="ready" if issues else "needs_review",
             evidence_count=len(issues),
-            summary=f"{len(issues)} review candidates generated with requirement, observation, and plan-location links.",
+            summary=(
+                f"{len(issues)} review candidates generated with requirement, "
+                "observation, and plan-location links."
+            ),
         ),
         TechnologyStatusOut(
             key="reports",
             label="Punch list, RFI, and change order report generation",
             status="ready" if issues else "needs_issues",
             evidence_count=len([issue for issue in issues if issue.rfi_draft]),
-            summary="Punch PDF/CSV, RFI draft, and CO evidence PDF generation are available from issue data.",
+            summary=(
+                "Punch PDF/CSV, RFI draft, and CO evidence PDF generation are "
+                "available from issue data."
+            ),
         ),
         TechnologyStatusOut(
             key="web_review",
             label="Web-based field issue review and management",
             status="ready" if jobs else "needs_job",
             evidence_count=len(jobs),
-            summary=f"{len(jobs)} pipeline runs available for browser-based issue review, approval, RFI, and reporting.",
+            summary=(
+                f"{len(jobs)} pipeline runs available for browser-based issue review, "
+                "approval, RFI, and reporting."
+            ),
         ),
     ]
+    statuses.append(
+        TechnologyStatusOut(
+            key="vlm_14b_adapter",
+            label="14B VLM field-to-report domain adapter",
+            status="ready_with_guardrail" if vlm_trained and vlm_qa_rate else "needs_training",
+            evidence_count=int(vlm.get("global_steps") or 0),
+            summary=(
+                f"{vlm.get('base_model_id', 'InternVL3.5-14B')} LoRA adapter trained on "
+                f"{vlm.get('train_rows', 0)} rows; production prompt JSON QA "
+                f"{int(float(vlm_qa_rate or 0) * 100)}% over "
+                f"{vlm.get('production_prompt_eval_samples', 0)} samples. Raw long-form "
+                "generation still uses a guardrail/compositor."
+            ),
+        )
+    )
+    return statuses
 
 
 @app.get("/v1/projects/{project_id}/issues", response_model=list[IssueOut])
@@ -481,7 +583,9 @@ def get_overlay(project_id: str, session: Session = Depends(get_session)) -> dic
 
 
 @app.get("/v1/projects/{project_id}/rag/search")
-def rag_search(project_id: str, q: str, session: Session = Depends(get_session)) -> dict[str, object]:
+def rag_search(
+    project_id: str, q: str, session: Session = Depends(get_session)
+) -> dict[str, object]:
     chunks = session.scalars(
         select(SpecChunk).join(Document).where(Document.project_id == project_id)
     ).all()
@@ -507,12 +611,19 @@ def training_status() -> dict[str, object]:
             "overall_training_progress_percent": 0,
             "status": "not_trained",
             "gpu_policy": gpu_policy(),
-            "detail": "Run CUDA_VISIBLE_DEVICES=7 conda run -n cjh_buili python ml/train_full_ai_stack.py",
+            "vlm_domain_adapter": _vlm_training_status(),
+            "detail": (
+                "Run CUDA_VISIBLE_DEVICES=7 conda run -n cjh_buili "
+                "python ml/train_full_ai_stack.py"
+            ),
         }
     payload = json.loads(path.read_text(encoding="utf-8"))
     payload["gpu_policy"] = gpu_policy()
+    payload["vlm_domain_adapter"] = _vlm_training_status()
     return payload
 
 
 if __name__ == "__main__":
-    uvicorn.run("services.api.buili.main:app", host=settings.api_host, port=settings.api_port, reload=False)
+    uvicorn.run(
+        "services.api.buili.main:app", host=settings.api_host, port=settings.api_port, reload=False
+    )
