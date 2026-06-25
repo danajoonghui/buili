@@ -10,8 +10,9 @@
     "web:lint": "npm --workspace apps/web run lint",
     "api:dev": "conda run -n cjh_buili python -m services.api.buili.main",
     "model:dev": "CUDA_VISIBLE_DEVICES=7 conda run -n cjh_buili python -m services.model_gateway.buili_model_gateway.main",
-    "train:download": "conda run -n cjh_buili python ml/download_public_data.py --limit 80",
-    "train:smoke": "CUDA_VISIBLE_DEVICES=7 conda run -n cjh_buili python ml/train_doc_layout_smoke.py --epochs 3"
+    "train:download": "conda run -n cjh_buili python ml/download_public_data.py --limit 200",
+    "train:smoke": "CUDA_VISIBLE_DEVICES=7 conda run -n cjh_buili python ml/train_doc_layout_smoke.py --epochs 3",
+    "train:full": "CUDA_VISIBLE_DEVICES=7 conda run -n cjh_buili python ml/train_full_ai_stack.py --epochs 30"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1"

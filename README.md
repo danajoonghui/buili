@@ -33,15 +33,21 @@ Default URLs:
 
 ## Training
 
-The training scripts force GPU 7. They fetch a small public DocLayNet sample when available and train a compact layout classifier smoke model.
+The training scripts run inside `cjh_buili` and force GPU 7. They fetch public DocLayNet layout samples when available and train the Buili AI stack baselines:
+
+- PDF drawing/spec RAG reranking
+- Plan symbol recognition
+- Field media element recognition
+- Drawing-field mismatch candidate generation
+- Punch list, RFI, and change-order report routing
 
 ```bash
-conda activate cjh_buili
-python ml/download_public_data.py --limit 80
-python ml/train_doc_layout_smoke.py --epochs 3
+npm run train:download
+npm run train:full
 ```
 
-Artifacts are written to `data/artifacts/`.
+Artifacts and dataset checksums are written to `data/artifacts/buili_ai_stack/`.
+Runtime status is exposed at `/v1/training/status`.
 
 ## Render Deployment
 

@@ -80,6 +80,24 @@ def test_gpu_policy_forces_only_device_7(monkeypatch) -> None:
     assert gpu_policy()["cuda_visible_devices"] == "7"
 
 
+def test_training_status_reports_completed_ai_stack() -> None:
+    client = TestClient(api_app)
+    response = client.get("/v1/training/status")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["overall_training_progress_percent"] == 100
+    assert payload["gpu_policy"]["cuda_visible_devices"] == "7"
+    assert {item["key"] for item in payload["technologies"]} == {
+        "pdf_rag",
+        "plan_symbol",
+        "media_recognition",
+        "mismatch_candidates",
+        "reports",
+    }
+    assert all(item["training_progress_percent"] == 100 for item in payload["technologies"])
+    assert all(item["sha256"] and item["rows"] > 0 for item in payload["datasets"])
+
+
 def test_document_upload_analysis_roundtrip() -> None:
     client = TestClient(api_app)
     project = client.post(

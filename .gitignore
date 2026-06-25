@@ -18,9 +18,13 @@ data/storage/
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/processed/public_layout_sample.jsonl
+!data/processed/buili_ai_stack/
+!data/processed/buili_ai_stack/**
 !data/artifacts/.gitkeep
 !data/artifacts/layout_smoke/
 !data/artifacts/layout_smoke/**
+!data/artifacts/buili_ai_stack/
+!data/artifacts/buili_ai_stack/**
 *.db
 *.sqlite
 *.sqlite3

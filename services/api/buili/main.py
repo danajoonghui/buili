@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import json
 from contextlib import asynccontextmanager
-from pathlib import Path
 from collections.abc import AsyncIterator
+from pathlib import Path
 
 import uvicorn
 from fastapi import BackgroundTasks, Depends, FastAPI, File, HTTPException, Request, UploadFile
@@ -13,8 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from .config import get_settings
-from .database import get_session, init_db
-from .database import SessionLocal
+from .database import SessionLocal, get_session, init_db
 from .gpu import force_gpu_7, gpu_policy
 from .models import (
     Document,
@@ -497,6 +497,21 @@ def metrics(session: Session = Depends(get_session)) -> dict[str, int]:
         "jobs": len(session.scalars(select(Job)).all()),
         "issues": len(session.scalars(select(Issue)).all()),
     }
+
+
+@app.get("/v1/training/status")
+def training_status() -> dict[str, object]:
+    path = REPO_ROOT / "data" / "artifacts" / "buili_ai_stack" / "training_progress.json"
+    if not path.exists():
+        return {
+            "overall_training_progress_percent": 0,
+            "status": "not_trained",
+            "gpu_policy": gpu_policy(),
+            "detail": "Run CUDA_VISIBLE_DEVICES=7 conda run -n cjh_buili python ml/train_full_ai_stack.py",
+        }
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["gpu_policy"] = gpu_policy()
+    return payload
 
 
 if __name__ == "__main__":

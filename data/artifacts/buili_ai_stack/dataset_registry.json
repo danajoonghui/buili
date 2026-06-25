@@ -1,0 +1,145 @@
+[
+  {
+    "path": "data/processed/public_layout_sample.jsonl",
+    "sha256": "cbcdc12f230b1e77bf8880cf580f2a941de3ba16d3f5305a0cce0dbc6e7190e5",
+    "rows": 199,
+    "purpose": "document_layout_training",
+    "sources": [
+      {
+        "name": "DocLayNet v1.1",
+        "url": "https://huggingface.co/datasets/docling-project/DocLayNet",
+        "license_note": "Public document layout dataset with page-level bounding boxes.",
+        "used_for": [
+          "pdf_rag",
+          "plan_symbol"
+        ]
+      }
+    ],
+    "checked_at": 1782355654
+  },
+  {
+    "path": "data/processed/buili_ai_stack/rag_pairs.jsonl",
+    "sha256": "4f9f51c5c067bc535b9fb92a05da40fedbf29f3645d231016436905602904c2b",
+    "rows": 25,
+    "purpose": "rag_pair_training",
+    "sources": [
+      {
+        "name": "Utah.gov Cooper Residence public plan PDF",
+        "url": "https://www.utah.gov/pmn/files/1020117.pdf",
+        "license_note": "Publicly accessible permit drawing; record source before reuse.",
+        "used_for": [
+          "pdf_rag",
+          "plan_symbol",
+          "mismatch_candidates"
+        ]
+      },
+      {
+        "name": "Minnesota electrical inspection checklist",
+        "url": "https://www.dli.mn.gov/sites/default/files/pdf/eli_inspection_checklist2.pdf",
+        "license_note": "Public government inspection checklist.",
+        "used_for": [
+          "pdf_rag",
+          "mismatch_candidates",
+          "reports"
+        ]
+      }
+    ],
+    "checked_at": 1782355654
+  },
+  {
+    "path": "data/processed/buili_ai_stack/plan_symbol_samples.jsonl",
+    "sha256": "9dd805e0251b86b60f3df776bd010a00f31702a8627a279b8874e462a3c32ca7",
+    "rows": 288,
+    "purpose": "plan_symbol_training",
+    "sources": [
+      {
+        "name": "Utah.gov Cooper Residence public plan PDF",
+        "url": "https://www.utah.gov/pmn/files/1020117.pdf",
+        "license_note": "Publicly accessible permit drawing; record source before reuse.",
+        "used_for": [
+          "pdf_rag",
+          "plan_symbol",
+          "mismatch_candidates"
+        ]
+      }
+    ],
+    "checked_at": 1782355656
+  },
+  {
+    "path": "data/processed/buili_ai_stack/field_recognition_samples.jsonl",
+    "sha256": "f31029bfcd30146cfd828fabcf269512016a1cc7840f6d28dcd10bac06585863",
+    "rows": 250,
+    "purpose": "field_element_training",
+    "sources": [
+      {
+        "name": "Utah.gov Cooper Residence public plan PDF",
+        "url": "https://www.utah.gov/pmn/files/1020117.pdf",
+        "license_note": "Publicly accessible permit drawing; record source before reuse.",
+        "used_for": [
+          "pdf_rag",
+          "plan_symbol",
+          "mismatch_candidates"
+        ]
+      }
+    ],
+    "checked_at": 1782355656
+  },
+  {
+    "path": "data/processed/buili_ai_stack/mismatch_samples.jsonl",
+    "sha256": "500b0c02ef30dab7b6e7f191ec386e1a50854859986644831d64c0ecde248768",
+    "rows": 220,
+    "purpose": "mismatch_classifier_training",
+    "sources": [
+      {
+        "name": "Utah.gov Cooper Residence public plan PDF",
+        "url": "https://www.utah.gov/pmn/files/1020117.pdf",
+        "license_note": "Publicly accessible permit drawing; record source before reuse.",
+        "used_for": [
+          "pdf_rag",
+          "plan_symbol",
+          "mismatch_candidates"
+        ]
+      },
+      {
+        "name": "Minnesota electrical inspection checklist",
+        "url": "https://www.dli.mn.gov/sites/default/files/pdf/eli_inspection_checklist2.pdf",
+        "license_note": "Public government inspection checklist.",
+        "used_for": [
+          "pdf_rag",
+          "mismatch_candidates",
+          "reports"
+        ]
+      }
+    ],
+    "checked_at": 1782355656
+  },
+  {
+    "path": "data/processed/buili_ai_stack/report_routing_samples.jsonl",
+    "sha256": "a0fcb7e9d3f90c47cd83b85019e4b3e23ed6f5b9a8a09786733f9ef67f8567dc",
+    "rows": 210,
+    "purpose": "report_routing_training",
+    "sources": [
+      {
+        "name": "Utah.gov Cooper Residence public plan PDF",
+        "url": "https://www.utah.gov/pmn/files/1020117.pdf",
+        "license_note": "Publicly accessible permit drawing; record source before reuse.",
+        "used_for": [
+          "pdf_rag",
+          "plan_symbol",
+          "mismatch_candidates"
+        ]
+      },
+      {
+        "name": "Minnesota electrical inspection checklist",
+        "url": "https://www.dli.mn.gov/sites/default/files/pdf/eli_inspection_checklist2.pdf",
+        "license_note": "Public government inspection checklist.",
+        "used_for": [
+          "pdf_rag",
+          "mismatch_candidates",
+          "reports"
+        ]
+      }
+    ],
+    "checked_at": 1782355657
+  }
+]
