@@ -173,9 +173,25 @@
       }
       .grid {
         display: grid;
-        grid-template-columns: 340px minmax(360px, 1fr) 286px;
-        gap: 32px;
+        grid-template-columns: 360px minmax(520px, 1fr);
+        gap: 0;
+        border: 1px solid var(--line);
+        box-shadow: 0 18px 50px rgba(47, 47, 44, .08);
       }
+      #panelIssues .grid > section:first-child {
+        border-right: 1px solid var(--line);
+        max-height: 760px;
+        overflow: auto;
+      }
+      #panelIssues .grid > section:first-child .section-row,
+      #panelIssues .grid > section:first-child .tabs {
+        padding-left: 22px;
+        padding-right: 22px;
+      }
+      #panelIssues .grid > section:first-child .section-row {
+        padding-top: 24px;
+      }
+      #panelIssues .grid > aside { display: none; }
       .section-row {
         display: flex;
         align-items: center;
@@ -582,6 +598,205 @@
         display: none;
       }
       .hidden { display: none !important; }
+      .spatial-workspace {
+        min-width: 0;
+        background: #fff;
+      }
+      .model-stage {
+        position: relative;
+        min-height: 560px;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 52% 24%, rgba(245, 248, 250, .96), rgba(255,255,255,0) 38%),
+          linear-gradient(135deg, #f7f9fb 0%, #fff 48%, #eef2f4 100%);
+      }
+      .model-toolbar,
+      .view-toggle,
+      .floor-key,
+      .mini-map-card {
+        position: absolute;
+        z-index: 5;
+      }
+      .model-toolbar {
+        left: 20px;
+        top: 16px;
+        display: flex;
+        box-shadow: 0 8px 24px rgba(35, 43, 52, .12);
+      }
+      .model-toolbar button {
+        width: 46px;
+        min-height: 46px;
+        border: 0;
+        border-right: 1px solid #e8edf1;
+        background: rgba(255,255,255,.94);
+        padding: 0;
+      }
+      .model-toolbar button.active {
+        outline: 1.5px solid #2c87ff;
+        outline-offset: -1.5px;
+      }
+      .view-toggle {
+        right: 20px;
+        top: 18px;
+        display: flex;
+        padding: 3px;
+        background: rgba(255,255,255,.94);
+        box-shadow: 0 8px 24px rgba(35, 43, 52, .12);
+      }
+      .view-toggle button {
+        border: 0;
+        min-height: 34px;
+        background: transparent;
+      }
+      .view-toggle .active {
+        background: #0b70df;
+        color: #fff;
+      }
+      .model-image {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: min(1120px, 104%);
+        height: min(720px, 98%);
+        object-fit: contain;
+        transform: translate(-50%, -48%);
+      }
+      .model-pin {
+        position: absolute;
+        z-index: 6;
+        min-height: 0;
+        border: 0;
+        background: transparent;
+        color: #e3342b;
+        transform: translate(-50%, -100%);
+        padding: 0;
+      }
+      .model-pin.review { color: #f6b915; }
+      .model-pin b {
+        display: grid;
+        place-items: center;
+        width: 38px;
+        height: 38px;
+        border: 3px solid #111;
+        border-radius: 999px 999px 999px 0;
+        background: currentColor;
+        transform: rotate(-45deg);
+        box-shadow: 0 2px 7px rgba(0,0,0,.24);
+      }
+      .model-pin b::after {
+        content: "";
+        width: 10px;
+        height: 10px;
+        border: 3px solid #111;
+        border-radius: 999px;
+        background: #fff;
+      }
+      .model-pin span {
+        display: block;
+        min-width: 48px;
+        margin-top: -3px;
+        border: 2px solid currentColor;
+        background: #fff;
+        color: #202020;
+        padding: 2px 5px;
+        font-size: 12px;
+        font-weight: 800;
+        text-align: center;
+      }
+      .floor-key {
+        right: 18px;
+        bottom: 176px;
+        display: grid;
+        gap: 10px;
+        width: 190px;
+        background: rgba(255,255,255,.94);
+        padding: 16px;
+        box-shadow: 0 10px 26px rgba(35,43,52,.12);
+      }
+      .floor-key strong { font-size: 14px; }
+      .floor-key span {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        font-size: 13px;
+      }
+      .dot {
+        width: 11px;
+        height: 11px;
+        border-radius: 999px;
+        background: #e3342b;
+      }
+      .dot.review { background: #f6b915; }
+      .dot.resolved { background: #1b9b3a; }
+      .mini-map-card {
+        right: 18px;
+        bottom: 18px;
+        width: 250px;
+        aspect-ratio: 1.55;
+        border: 1px solid #dce2e5;
+        background: #fff;
+        box-shadow: 0 10px 26px rgba(35,43,52,.14);
+      }
+      .mini-map-card img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .spatial-bottom {
+        display: grid;
+        grid-template-columns: minmax(260px, .42fr) minmax(200px, .28fr) minmax(260px, .3fr);
+        border-top: 1px solid var(--line);
+      }
+      .spatial-bottom > section {
+        min-width: 0;
+        padding: 18px 20px;
+        border-right: 1px solid var(--line);
+      }
+      .spatial-bottom > section:last-child { border-right: 0; }
+      .panel-head {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 12px;
+        font-weight: 800;
+      }
+      .panel-head span { color: #0b70df; }
+      .thumb-row,
+      .doc-row {
+        display: grid;
+        gap: 12px;
+      }
+      .thumb-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .doc-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .thumb img,
+      .doc img {
+        width: 100%;
+        height: 96px;
+        object-fit: cover;
+        border: 1px solid #e2e7ea;
+      }
+      .doc img {
+        height: 104px;
+        object-fit: contain;
+      }
+      .thumb small,
+      .doc small {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .summary-grid div {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 10px;
+        border-top: 1px solid var(--line);
+        padding: 8px 0;
+        font-size: 13px;
+      }
+      .summary-grid span {
+        color: var(--muted);
+        font-weight: 800;
+      }
       @media (max-width: 900px) {
         .shell { display: block; }
         .side { display: none; }
@@ -594,6 +809,24 @@
         .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .kpi:nth-child(2) { border-right: 0; }
         .grid, .two-col, .plan-review { grid-template-columns: 1fr; }
+        #panelIssues .grid > section:first-child {
+          order: 2;
+          max-height: 520px;
+          border-top: 1px solid var(--line);
+          border-right: 0;
+        }
+        #inspector { order: 1; }
+        .model-stage { min-height: 470px; }
+        .model-toolbar { left: 10px; right: 10px; overflow-x: auto; }
+        .model-toolbar button { flex: 0 0 42px; width: 42px; min-height: 42px; }
+        .view-toggle { right: 10px; top: 66px; }
+        .model-image { width: 720px; max-width: none; transform: translate(-50%, -46%); }
+        .model-pin { transform: translate(-50%, -92%) scale(.82); transform-origin: center bottom; }
+        .floor-key { left: 10px; right: auto; bottom: 120px; width: 142px; padding: 12px; }
+        .mini-map-card { right: 10px; bottom: 12px; width: 142px; }
+        .spatial-bottom { grid-template-columns: 1fr; }
+        .spatial-bottom > section { border-right: 0; border-top: 1px solid var(--line); }
+        .thumb-row { grid-template-columns: 1fr; }
         .detail { grid-template-columns: 1fr; }
         .detail div { border-right: 0; border-bottom: 1px solid var(--line); }
         .evidence-block { grid-template-columns: 1fr; gap: 8px; }
@@ -793,6 +1026,80 @@
         deferredPrompt: null,
         autoRan: new Set()
       };
+      const demoIssues = [
+        {
+          issue_id: "demo-a32-door",
+          type: "dimension_mismatch",
+          discipline: "architectural",
+          severity: "blocker",
+          room: "Room 101",
+          status: "review_ready",
+          confidence: .81,
+          title: "A3.2 Door Width",
+          description: "Actual 810mm door opening is below the 910mm plan requirement.",
+          recommended_action: "Confirm framed opening width before drywall close-in.",
+          assignee: "GC",
+          due_date: "2026-07-01",
+          requirement: { source: "A-101", text: "Door opening required at 910mm clear width." },
+          observation: { media_id: "field-photo-03", text: "Measured field opening reads 810mm." },
+          plan_location: { sheet_id: "A-101" },
+          evidence: [{}]
+        },
+        {
+          issue_id: "demo-e11-afci",
+          type: "coverage_check",
+          discipline: "electrical",
+          severity: "major",
+          room: "Corridor A",
+          status: "review_ready",
+          confidence: .88,
+          title: "E1.1 AFCI Outlet",
+          description: "Low wall outlet not installed at the E1.1 corridor location.",
+          recommended_action: "Install AFCI outlet per E1.1 plan specification before rough-in approval.",
+          assignee: "Electrical Sub",
+          due_date: "2026-07-02",
+          requirement: { source: "E1.1", text: "Electrical notes require AFCI protected outlets." },
+          observation: { media_id: "field-photo-01", text: "Field image and 3D alignment show missing outlet." },
+          plan_location: { sheet_id: "A-101" },
+          evidence: [{}, {}, {}]
+        },
+        {
+          issue_id: "demo-m24-diffuser",
+          type: "location_mismatch",
+          discipline: "mechanical",
+          severity: "major",
+          room: "Office 204",
+          status: "needs_more_evidence",
+          confidence: .76,
+          title: "M2.4 Supply Diffuser",
+          description: "Diffuser location mismatch against M2.4 ceiling coordination note.",
+          recommended_action: "Verify diffuser location against reflected ceiling plan and capture correction evidence.",
+          assignee: "Mechanical Sub",
+          due_date: "2026-07-03",
+          requirement: { source: "M-201", text: "Supply diffuser to align with ceiling grid." },
+          observation: { media_id: "field-photo-02", text: "3D overlay places diffuser outside expected bay." },
+          plan_location: { sheet_id: "M-201" },
+          evidence: [{}]
+        },
+        {
+          issue_id: "demo-p13-pipe",
+          type: "clearance_check",
+          discipline: "mechanical",
+          severity: "minor",
+          room: "Mechanical Room",
+          status: "needs_more_evidence",
+          confidence: .69,
+          title: "P1.3 Pipe Clearance",
+          description: "Pipe clearance appears less than 25mm at the utility wall.",
+          recommended_action: "Capture one additional field photo with tape reference.",
+          assignee: "Field PM",
+          due_date: "2026-07-05",
+          requirement: { source: "P-101", text: "Maintain minimum service clearance at utility wall." },
+          observation: { media_id: "field-photo-04", text: "Spatial candidate needs PM verification." },
+          plan_location: { sheet_id: "P-101" },
+          evidence: [{}]
+        }
+      ];
       const $ = (id) => document.getElementById(id);
       const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
       const pct = (value) => Math.round(Number(value || 0) * 100);
@@ -827,7 +1134,7 @@
           request(`/v1/projects/${projectId}/observations`),
           request(`/v1/projects/${projectId}/technology-status`)
         ]);
-        state.issues = issues;
+        state.issues = issues.length ? issues : demoIssues;
         state.overlay = overlay;
         state.job = job;
         state.documents = documents;
@@ -838,7 +1145,7 @@
           state.selectedId = state.issues[0]?.issue_id || "";
         }
         render();
-        if (!state.issues.length && state.documents.length && !state.autoRan.has(projectId)) {
+        if (!issues.length && state.documents.length && !state.autoRan.has(projectId)) {
           state.autoRan.add(projectId);
           await runReview("Preparing the first review run...");
         }
@@ -895,31 +1202,81 @@
         }).join("") || `<p class="subtle">No issue candidates yet. Run review to generate the first inbox.</p>`;
       }
       function renderInspector(issue) {
-        if (!issue) {
-          $("inspector").innerHTML = `<h2>No issue selected</h2><p class="subtle">Run review to generate issue candidates.</p>`;
-          return;
-        }
+        const active = issue || {
+          issue_id: "demo-e11-afci",
+          title: "AFCI Outlet",
+          room: "Corridor A",
+          status: "review_ready",
+          confidence: .88,
+          assignee: "Electrical Sub",
+          due_date: "2026-07-02",
+          recommended_action: "Install AFCI outlet per E1.1 plan specification before rough-in approval.",
+          plan_location: { sheet_id: "A-101" },
+          evidence: [{}, {}, {}]
+        };
+        const pins = [
+          { code: "E1.1", tone: "open", x: 52, y: 32 },
+          { code: "M2.4", tone: "review", x: 67, y: 48 },
+          { code: "A3.2", tone: "open", x: 39, y: 62 },
+          { code: "P1.3", tone: "review", x: 23, y: 74 }
+        ];
         $("inspector").innerHTML = `
-          <article>
-            <div class="inspector-head">
-              <div><p class="eyebrow">${esc(issue.discipline)}</p><h2>${esc(issue.title)}</h2></div>
-              <span class="status">${esc(issue.status).replaceAll("_", " ")}</span>
+          <article class="spatial-workspace">
+            <div class="model-stage">
+              <div class="model-toolbar" aria-label="3D tools">
+                <button class="active" title="Select">↖</button>
+                <button title="Pan">✋</button>
+                <button title="Rotate">↻</button>
+                <button title="Fit">⛶</button>
+                <button title="Model">□</button>
+                <button title="Grid">▦</button>
+                <button title="Measure">⌁</button>
+              </div>
+              <div class="view-toggle"><button>2D Plan</button><button class="active">3D Model</button></div>
+              <img class="model-image" src="/plan2field3d/auto_plan2field3d.png" alt="Buili Plan2Field 3D model" />
+              ${pins.map((pin) => `
+                <button class="model-pin ${pin.tone === "review" ? "review" : ""}" style="left:${16 + pin.x * .68}%;top:${16 + pin.y * .62}%">
+                  <b></b><span>${pin.code}</span>
+                </button>`).join("")}
+              <div class="floor-key">
+                <strong>Floor Plan Key</strong>
+                <span><i class="dot"></i>Open</span>
+                <span><i class="dot review"></i>In Review</span>
+                <span><i class="dot resolved"></i>Resolved</span>
+              </div>
+              <div class="mini-map-card"><img src="/plan2field3d/auto_plan_crop.png" alt="2D plan minimap" /></div>
             </div>
-            <p>${esc(issue.description)}</p>
-            <div class="detail">
-              <div><span>Room</span><strong>${esc(issue.room)}</strong></div>
-              <div><span>Severity</span><strong>${esc(issue.severity)}</strong></div>
-              <div><span>Confidence</span><strong>${pct(issue.confidence)}%</strong></div>
-              <div><span>Assignee</span><strong>${esc(issue.assignee || "Unassigned")}</strong></div>
-            </div>
-            ${evidenceBlock("Requirement", issue.requirement?.text, issue.requirement?.source)}
-            ${evidenceBlock("Observation", issue.observation?.text, issue.observation?.media_id)}
-            ${evidenceBlock("Recommended action", issue.recommended_action, "human review gate")}
-            <div class="actions">
-              <button class="approve" data-status="approved">Approve</button>
-              <button data-status="needs_more_evidence">More evidence</button>
-              <button id="rfiBtn">RFI</button>
-              <button class="reject" data-status="rejected_false_positive">Reject</button>
+            <div class="spatial-bottom">
+              <section>
+                <div class="panel-head"><strong>Field Evidence</strong><span>(${Math.max(state.media.length, active.evidence?.length || 0)})</span></div>
+                <div class="thumb-row">
+                  <figure class="thumb"><img src="/site-media/construction-site-electrical-work.jpg" alt="Outlet close-up" /><small>Outlet close-up</small></figure>
+                  <figure class="thumb"><img src="/plans/utah-e11-electrical-plan.jpg" alt="Marked plan area" /><small>Marked plan area</small></figure>
+                  <figure class="thumb"><img src="/plan2field3d/auto_plan2field3d.png" alt="3D spatial view" /><small>3D spatial view</small></figure>
+                </div>
+              </section>
+              <section>
+                <div class="panel-head"><strong>Documents</strong><span>(${Math.max(state.documents.length, 2)})</span></div>
+                <div class="doc-row">
+                  <figure class="doc"><img src="/plan2field3d/auto_plan_crop.png" alt="A-101.pdf" /><small>${esc(active.plan_location?.sheet_id || "A-101")}.pdf</small></figure>
+                  <figure class="doc"><img src="/plans/utah-e11-electrical-plan.jpg" alt="Spec electrical" /><small>Spec_Electrical.pdf</small></figure>
+                </div>
+              </section>
+              <section>
+                <div class="panel-head"><strong>Issue Summary</strong></div>
+                <div class="summary-grid">
+                  <div><span>Confidence</span><strong>${pct(active.confidence)}%</strong></div>
+                  <div><span>Action</span><strong>${esc(active.recommended_action || "Verify against plan.")}</strong></div>
+                  <div><span>Assignee</span><strong>${esc(active.assignee || "Field PM")}</strong></div>
+                  <div><span>Due Date</span><strong>${esc(active.due_date || "Open")}</strong></div>
+                </div>
+                <div class="actions">
+                  <button class="approve" data-status="approved">Approve</button>
+                  <button data-status="needs_more_evidence">More</button>
+                  <button id="rfiBtn">RFI</button>
+                  <button class="reject" data-status="rejected_false_positive">Reject</button>
+                </div>
+              </section>
             </div>
           </article>`;
       }
@@ -1051,6 +1408,12 @@
       async function setIssueStatus(status) {
         const issue = selectedIssue();
         if (!issue) return;
+        if (String(issue.issue_id).startsWith("demo-")) {
+          issue.status = status;
+          notice(`Demo issue marked as ${status.replaceAll("_", " ")}.`);
+          render();
+          return;
+        }
         const updated = await request(`/v1/issues/${issue.issue_id}`, { method: "PATCH", body: JSON.stringify({ status }) });
         state.issues = state.issues.map((item) => item.issue_id === updated.issue_id ? updated : item);
         notice(`Issue marked as ${status.replaceAll("_", " ")}.`);

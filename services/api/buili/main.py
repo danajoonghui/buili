@@ -132,6 +132,12 @@ if (WEB_PUBLIC_ROOT / "site-media").exists():
     app.mount(
         "/site-media", StaticFiles(directory=WEB_PUBLIC_ROOT / "site-media"), name="site-media"
     )
+if (WEB_PUBLIC_ROOT / "plan2field3d").exists():
+    app.mount(
+        "/plan2field3d",
+        StaticFiles(directory=WEB_PUBLIC_ROOT / "plan2field3d"),
+        name="plan2field3d",
+    )
 
 
 @app.middleware("http")
