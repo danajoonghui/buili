@@ -3,18 +3,28 @@
 import {
   AlertTriangle,
   Archive,
+  Box,
   Check,
   ClipboardCheck,
   FileDown,
+  FileImage,
   FileQuestion,
+  FileText,
   FolderPlus,
   Gauge,
+  Grid3X3,
+  Hand,
   ListChecks,
   Loader2,
   Map,
+  MapPin,
+  Maximize,
   MessageSquarePlus,
   MoreHorizontal,
+  MousePointer2,
   RefreshCcw,
+  RotateCcw,
+  Ruler,
   Search,
   ShieldCheck,
   Upload,
@@ -36,10 +46,12 @@ import {
 import { InstallPrompt } from "@/components/InstallPrompt";
 
 type View = "review" | "evidence" | "overlay" | "reports" | "pipeline";
-type IssueFilter = "all" | "blocker" | "electrical" | "mechanical";
+type IssueFilter = "all" | "open" | "review" | "resolved";
 const PLAN_IMAGE_SRC = "/plans/utah-e11-electrical-plan.jpg";
 const PLAN_LABEL = "E1.1 Electrical Plans";
 const FIELD_IMAGE_SRC = "/site-media/construction-site-electrical-work.jpg";
+const PLAN2FIELD_3D_SRC = "/plan2field3d/auto_plan2field3d.png";
+const PLAN2FIELD_MINIMAP_SRC = "/plan2field3d/auto_plan_crop.png";
 const DEFAULT_RAG_QUERY = "AFCI GFCI smoke detector outlet electrical plan";
 const DEMO_PROJECT_NAME = "Cooper Residence E1.1";
 
@@ -67,6 +79,236 @@ const severityRank: Record<string, number> = {
   informational: 1
 };
 
+const DEMO_SPATIAL_ISSUES: Issue[] = [
+  {
+    issue_id: "demo-e11-afci",
+    project_id: "demo-plan2field",
+    type: "coverage_check",
+    discipline: "electrical",
+    severity: "major",
+    room: "Corridor A",
+    status: "review_ready",
+    confidence: 0.88,
+    title: "AFCI Outlet",
+    description: "Low wall outlet not installed at the E1.1 corridor location.",
+    recommended_action: "Install AFCI outlet per E1.1 plan specification before rough-in approval.",
+    assignee: "Electrical Sub",
+    due_date: "2026-07-02",
+    subcontractor: "Electrical Sub",
+    requirement: {
+      text: "Electrical notes require AFCI protected outlets in living and sleeping areas.",
+      source: "E1.1"
+    },
+    observation: {
+      text: "Field image and 3D alignment show missing low wall outlet at corridor wall.",
+      media_id: "field-photo-01"
+    },
+    plan_location: { sheet_id: "A-101", code: "E1.1", x: 52, y: 32 },
+    rfi_draft: "",
+    evidence: [
+      {
+        evidence_id: "demo-evidence-1",
+        evidence_type: "plan_pin",
+        ref_id: "A-101",
+        r2_key: PLAN2FIELD_3D_SRC,
+        page: 1,
+        bbox: [0.49, 0.29, 0.55, 0.36],
+        frame_ts: 0,
+        label: "AFCI outlet plan pin"
+      },
+      {
+        evidence_id: "demo-evidence-2",
+        evidence_type: "field_photo",
+        ref_id: "field-photo-01",
+        r2_key: FIELD_IMAGE_SRC,
+        page: 0,
+        bbox: [0.31, 0.28, 0.52, 0.58],
+        frame_ts: 0,
+        label: "missing outlet location"
+      },
+      {
+        evidence_id: "demo-evidence-3",
+        evidence_type: "spatial_view",
+        ref_id: "plan2field-3d",
+        r2_key: PLAN2FIELD_3D_SRC,
+        page: 0,
+        bbox: [0.45, 0.22, 0.62, 0.43],
+        frame_ts: 0,
+        label: "3D issue alignment"
+      }
+    ],
+    spatial_context: {
+      spatial_evidence_id: "spatial-demo-1",
+      room_graph_id: "room-graph-e11",
+      design_asset_id: "A-101",
+      field_asset_id: "field-photo-01",
+      snapshot_uri: PLAN2FIELD_3D_SRC,
+      spatial_note: "OCR, symbol extraction, wall union geometry, and issue pin are aligned in the 3D model.",
+      alignment_confidence: 0.91,
+      geometry_confidence: 0.87,
+      geometry_features: { walls: 48, openings: 15, objects: 14 }
+    }
+  },
+  {
+    issue_id: "demo-m24-diffuser",
+    project_id: "demo-plan2field",
+    type: "location_mismatch",
+    discipline: "mechanical",
+    severity: "major",
+    room: "Office 204",
+    status: "needs_more_evidence",
+    confidence: 0.76,
+    title: "Supply Diffuser",
+    description: "Diffuser location mismatch against M2.4 ceiling coordination note.",
+    recommended_action: "Verify diffuser location against reflected ceiling plan and capture correction evidence.",
+    assignee: "Mechanical Sub",
+    due_date: "2026-07-03",
+    subcontractor: "Mechanical Sub",
+    requirement: { text: "Supply diffuser to align with ceiling grid and M2.4 room mark.", source: "M-201" },
+    observation: { text: "3D overlay places diffuser outside expected bay.", media_id: "field-photo-02" },
+    plan_location: { sheet_id: "M-201", code: "M2.4", x: 67, y: 48 },
+    rfi_draft: "",
+    evidence: [],
+    spatial_context: {
+      spatial_evidence_id: "spatial-demo-2",
+      room_graph_id: "room-graph-e11",
+      snapshot_uri: PLAN2FIELD_3D_SRC,
+      spatial_note: "Ceiling object candidate is pinned for PM review.",
+      alignment_confidence: 0.82,
+      geometry_confidence: 0.86
+    }
+  },
+  {
+    issue_id: "demo-a32-door",
+    project_id: "demo-plan2field",
+    type: "dimension_mismatch",
+    discipline: "architectural",
+    severity: "blocker",
+    room: "Room 101",
+    status: "review_ready",
+    confidence: 0.81,
+    title: "Door Width",
+    description: "Actual 810mm door opening is below the 910mm plan requirement.",
+    recommended_action: "Confirm framed opening width before drywall close-in.",
+    assignee: "GC",
+    due_date: "2026-07-01",
+    subcontractor: "GC",
+    requirement: { text: "Door opening required at 910mm clear width.", source: "A-101" },
+    observation: { text: "Measured field opening reads 810mm.", media_id: "field-photo-03" },
+    plan_location: { sheet_id: "A-101", code: "A3.2", x: 39, y: 62 },
+    rfi_draft: "",
+    evidence: [],
+    spatial_context: {
+      spatial_evidence_id: "spatial-demo-3",
+      room_graph_id: "room-graph-e11",
+      snapshot_uri: PLAN2FIELD_3D_SRC,
+      spatial_note: "Door swing and wall opening are extracted into a lightweight 3D opening object.",
+      alignment_confidence: 0.88,
+      geometry_confidence: 0.9
+    }
+  },
+  {
+    issue_id: "demo-p13-pipe",
+    project_id: "demo-plan2field",
+    type: "clearance_check",
+    discipline: "mechanical",
+    severity: "minor",
+    room: "Mechanical Room",
+    status: "needs_more_evidence",
+    confidence: 0.69,
+    title: "Pipe Clearance",
+    description: "Pipe clearance appears less than 25mm at the utility wall.",
+    recommended_action: "Capture one additional field photo with tape reference.",
+    assignee: "Field PM",
+    due_date: "2026-07-05",
+    subcontractor: "Mechanical Sub",
+    requirement: { text: "Maintain minimum service clearance at utility wall.", source: "P-101" },
+    observation: { text: "Spatial candidate needs PM verification.", media_id: "field-photo-04" },
+    plan_location: { sheet_id: "P-101", code: "P1.3", x: 23, y: 74 },
+    rfi_draft: "",
+    evidence: [],
+    spatial_context: {
+      spatial_evidence_id: "spatial-demo-4",
+      room_graph_id: "room-graph-e11",
+      snapshot_uri: PLAN2FIELD_3D_SRC,
+      spatial_note: "Pipe clearance issue is generated as a candidate, not a final defect.",
+      alignment_confidence: 0.74,
+      geometry_confidence: 0.79
+    }
+  }
+];
+
+const DEMO_DOCUMENTS: DocumentAsset[] = [
+  {
+    doc_id: "demo-doc-a101",
+    project_id: "demo-plan2field",
+    type: "plan",
+    filename: "A-101.pdf",
+    mime: "application/pdf",
+    r2_key: PLAN2FIELD_MINIMAP_SRC,
+    hash: "demo-a101",
+    revision: "A",
+    parsed_status: "parsed",
+    size: 0,
+    metadata_json: { sheet_id: "A-101" }
+  },
+  {
+    doc_id: "demo-doc-spec",
+    project_id: "demo-plan2field",
+    type: "spec",
+    filename: "Spec_Electrical.pdf",
+    mime: "application/pdf",
+    r2_key: PLAN_IMAGE_SRC,
+    hash: "demo-spec",
+    revision: "A",
+    parsed_status: "parsed",
+    size: 0,
+    metadata_json: { section: "Electrical" }
+  }
+];
+
+const DEMO_MEDIA_ASSETS: SiteMediaAsset[] = [
+  {
+    media_id: "field-photo-01",
+    project_id: "demo-plan2field",
+    filename: "outlet-closeup.jpg",
+    mime: "image/jpeg",
+    r2_key: FIELD_IMAGE_SRC,
+    hash: "demo-media-1",
+    metadata_json: { type: "field_evidence" }
+  },
+  {
+    media_id: "field-photo-02",
+    project_id: "demo-plan2field",
+    filename: "marked-plan.jpg",
+    mime: "image/jpeg",
+    r2_key: PLAN_IMAGE_SRC,
+    hash: "demo-media-2",
+    metadata_json: { type: "plan_evidence" }
+  },
+  {
+    media_id: "field-photo-03",
+    project_id: "demo-plan2field",
+    filename: "spatial-model.jpg",
+    mime: "image/png",
+    r2_key: PLAN2FIELD_3D_SRC,
+    hash: "demo-media-3",
+    metadata_json: { type: "spatial_evidence" }
+  }
+];
+
+const DEMO_OVERLAY: Overlay = {
+  project_id: "demo-plan2field",
+  sheets: [{ id: "A-101", title: "Plan2Field 3D source sheet" }],
+  pins: [
+    { id: "demo-e11-afci", label: "E1.1", severity: "major", room: "Corridor A", x: 0.52, y: 0.32, confidence: 0.88 },
+    { id: "demo-m24-diffuser", label: "M2.4", severity: "major", room: "Office 204", x: 0.67, y: 0.48, confidence: 0.76 },
+    { id: "demo-a32-door", label: "A3.2", severity: "blocker", room: "Room 101", x: 0.39, y: 0.62, confidence: 0.81 },
+    { id: "demo-p13-pipe", label: "P1.3", severity: "minor", room: "Mechanical Room", x: 0.23, y: 0.74, confidence: 0.69 }
+  ],
+  regions: []
+};
+
 export function BuiliApp() {
   const [view, setView] = useState<View>("review");
   const [issueFilter, setIssueFilter] = useState<IssueFilter>("all");
@@ -89,45 +331,50 @@ export function BuiliApp() {
   const [apiError, setApiError] = useState("");
   const [notice, setNotice] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const displayIssues = issues.length ? issues : DEMO_SPATIAL_ISSUES;
+  const displayDocuments = documents.length ? documents : DEMO_DOCUMENTS;
+  const displayMediaAssets = mediaAssets.length ? mediaAssets : DEMO_MEDIA_ASSETS;
+  const displayOverlay = overlay ?? DEMO_OVERLAY;
 
   const selectedIssue = useMemo(
-    () => issues.find((issue) => issue.issue_id === selectedIssueId) ?? issues[0],
-    [issues, selectedIssueId]
+    () => displayIssues.find((issue) => issue.issue_id === selectedIssueId) ?? displayIssues[0],
+    [displayIssues, selectedIssueId]
   );
 
   const actionNeeded = useMemo(
-    () => issues.filter((issue) => issue.status === "review_ready" && issue.confidence >= 0.55).length,
-    [issues]
+    () => displayIssues.filter((issue) => issue.status === "review_ready" && issue.confidence >= 0.55).length,
+    [displayIssues]
   );
 
   const orderedIssues = useMemo(
     () =>
-      [...issues].sort(
+      [...displayIssues].sort(
         (a, b) =>
           (severityRank[b.severity] ?? 0) - (severityRank[a.severity] ?? 0) ||
           b.confidence - a.confidence
       ),
-    [issues]
+    [displayIssues]
   );
 
   const filteredIssues = useMemo(
     () =>
       orderedIssues.filter((issue) => {
         if (issueFilter === "all") return true;
-        if (issueFilter === "blocker") return issue.severity === "blocker";
-        return issue.discipline === issueFilter;
+        if (issueFilter === "open") return issue.status === "review_ready";
+        if (issueFilter === "review") return issue.status === "needs_more_evidence";
+        return issue.status === "approved";
       }),
     [issueFilter, orderedIssues]
   );
 
   const issueCounts = useMemo(
     () => ({
-      all: issues.length,
-      blocker: issues.filter((issue) => issue.severity === "blocker").length,
-      electrical: issues.filter((issue) => issue.discipline === "electrical").length,
-      mechanical: issues.filter((issue) => issue.discipline === "mechanical").length
+      all: displayIssues.length,
+      open: displayIssues.filter((issue) => issue.status === "review_ready").length,
+      review: displayIssues.filter((issue) => issue.status === "needs_more_evidence").length,
+      resolved: displayIssues.filter((issue) => issue.status === "approved").length
     }),
-    [issues]
+    [displayIssues]
   );
 
   const groupedIssues = useMemo(() => {
@@ -268,6 +515,10 @@ export function BuiliApp() {
   }
 
   async function patchIssue(issueId: string, status: string) {
+    if (issueId.startsWith("demo-")) {
+      setNotice(`Demo issue marked as ${status.replaceAll("_", " ")}. Connect a project to persist review decisions.`);
+      return;
+    }
     try {
       const updated = await api.updateIssue(issueId, { status });
       setIssues((current) => current.map((issue) => (issue.issue_id === issueId ? updated : issue)));
@@ -278,6 +529,13 @@ export function BuiliApp() {
   }
 
   async function generateRfi(issueId: string) {
+    const demoIssue = DEMO_SPATIAL_ISSUES.find((item) => item.issue_id === issueId);
+    if (demoIssue) {
+      setRfi(buildRfiPreview(demoIssue));
+      setNotice("Demo RFI draft generated from Plan2Field-3D evidence.");
+      setView("reports");
+      return;
+    }
     try {
       const draft = await api.createRfi(issueId);
       setRfi(draft.markdown);
@@ -436,68 +694,28 @@ export function BuiliApp() {
         {notice ? <p className="status-note">{notice}</p> : null}
 
         <section className="kpi-band" aria-label="Project metrics">
-          <Metric label="Issues ready" value={issues.filter((issue) => issue.status === "review_ready").length} />
+          <Metric label="Issues ready" value={displayIssues.filter((issue) => issue.status === "review_ready").length} />
           <Metric label="Action needed" value={actionNeeded} />
-          <Metric label="Evidence score" value={`${Math.round(avg(issues.map((issue) => issue.confidence)) * 100)}%`} />
-          <Metric label="Job" value={job ? `${job.progress}%` : "idle"} />
+          <Metric label="Evidence score" value={`${Math.round(avg(displayIssues.map((issue) => issue.confidence)) * 100)}%`} />
+          <Metric label="Job" value={job ? `${job.progress}%` : issues.length ? "100%" : "demo"} />
         </section>
 
         {view === "review" && (
-          <section className="content-grid review-grid">
-            <div className="issue-list" aria-label="Issue inbox">
-              <div className="section-title-row">
-                <h2>Issue inbox</h2>
-                <span>{filteredIssues.length} shown</span>
-              </div>
-              <div className="filter-row" aria-label="Issue filters">
-                <FilterChip active={issueFilter === "all"} onClick={() => setIssueFilter("all")}>
-                  All {issueCounts.all}
-                </FilterChip>
-                <FilterChip active={issueFilter === "blocker"} onClick={() => setIssueFilter("blocker")}>
-                  Blocker {issueCounts.blocker}
-                </FilterChip>
-                <FilterChip active={issueFilter === "electrical"} onClick={() => setIssueFilter("electrical")}>
-                  Elec {issueCounts.electrical}
-                </FilterChip>
-                <FilterChip active={issueFilter === "mechanical"} onClick={() => setIssueFilter("mechanical")}>
-                  Mech {issueCounts.mechanical}
-                </FilterChip>
-              </div>
-              {groupedIssues.map((group) => (
-                <div className="issue-section" key={group.key}>
-                  <p className="section-label">{group.title}</p>
-                  {group.items.map((issue) => (
-                    <button
-                      key={issue.issue_id}
-                      className={selectedIssue?.issue_id === issue.issue_id ? "issue-row selected" : "issue-row"}
-                      type="button"
-                      onClick={() => setSelectedIssueId(issue.issue_id)}
-                    >
-                      <span className={`severity-bar ${issue.severity}`} />
-                      <span className="issue-row-main">
-                        <span className="issue-type-line">
-                          {issue.type.replaceAll("_", " ")} · {issue.discipline}
-                        </span>
-                        <strong>{issue.title}</strong>
-                        <small>
-                          {issue.room} · {String(issue.requirement.source ?? "source pending")}
-                        </small>
-                      </span>
-                      <span className="confidence">{Math.round(issue.confidence * 100)}%</span>
-                    </button>
-                  ))}
-                </div>
-              ))}
-            </div>
-            <IssueInspector
-              issue={selectedIssue}
-              onApprove={(id) => patchIssue(id, "approved")}
-              onReject={(id) => patchIssue(id, "rejected_false_positive")}
-              onNeedMore={(id) => patchIssue(id, "needs_more_evidence")}
-              onRfi={generateRfi}
-            />
-            <FieldSnapshot issue={selectedIssue} overlay={overlay} />
-          </section>
+          <Plan2FieldReview
+            issue={selectedIssue}
+            filteredIssues={filteredIssues}
+            issueCounts={issueCounts}
+            issueFilter={issueFilter}
+            overlay={displayOverlay}
+            documents={displayDocuments}
+            mediaAssets={displayMediaAssets}
+            onFilter={setIssueFilter}
+            onSelectIssue={setSelectedIssueId}
+            onApprove={(id) => patchIssue(id, "approved")}
+            onReject={(id) => patchIssue(id, "rejected_false_positive")}
+            onNeedMore={(id) => patchIssue(id, "needs_more_evidence")}
+            onRfi={generateRfi}
+          />
         )}
 
         {view === "evidence" && (
@@ -547,7 +765,7 @@ export function BuiliApp() {
               <ReportPreview
                 title="Change order evidence"
                 meta={`${documents.length} docs · ${mediaAssets.length} media`}
-                body="Requirement, observation, plan pin, citation, and field media evidence are bundled for review."
+                body="Requirement, observation, plan pin, citation, field media, and Plan2Field-3D spatial evidence are bundled for review."
               />
             </div>
             <div className="report-actions">
@@ -626,6 +844,292 @@ function FilterChip({
   );
 }
 
+function Plan2FieldReview({
+  issue,
+  filteredIssues,
+  issueCounts,
+  issueFilter,
+  overlay,
+  documents,
+  mediaAssets,
+  onFilter,
+  onSelectIssue,
+  onApprove,
+  onReject,
+  onNeedMore,
+  onRfi
+}: {
+  issue?: Issue;
+  filteredIssues: Issue[];
+  issueCounts: Record<IssueFilter, number>;
+  issueFilter: IssueFilter;
+  overlay: Overlay | null;
+  documents: DocumentAsset[];
+  mediaAssets: SiteMediaAsset[];
+  onFilter: (filter: IssueFilter) => void;
+  onSelectIssue: (id: string) => void;
+  onApprove: (id: string) => void;
+  onReject: (id: string) => void;
+  onNeedMore: (id: string) => void;
+  onRfi: (id: string) => void;
+}) {
+  const pins = useMemo(() => buildModelPins(filteredIssues, overlay), [filteredIssues, overlay]);
+  const activeIssue = filteredIssues.find((item) => item.issue_id === issue?.issue_id) ?? filteredIssues[0] ?? issue;
+  const selectedPin = pins.find((pin) => pin.issueId === activeIssue?.issue_id) ?? pins[0];
+
+  return (
+    <section className="spatial-review-shell">
+      <aside className="spatial-issue-rail" aria-label="Issues">
+        <div className="spatial-rail-head">
+          <h2>Issues</h2>
+          <span>{filteredIssues.length} shown</span>
+        </div>
+        <div className="spatial-filter-row" aria-label="Issue filters">
+          <FilterChip active={issueFilter === "all"} onClick={() => onFilter("all")}>
+            All {issueCounts.all}
+          </FilterChip>
+          <FilterChip active={issueFilter === "open"} onClick={() => onFilter("open")}>
+            Open {issueCounts.open}
+          </FilterChip>
+          <FilterChip active={issueFilter === "review"} onClick={() => onFilter("review")}>
+            In Review {issueCounts.review}
+          </FilterChip>
+          <FilterChip active={issueFilter === "resolved"} onClick={() => onFilter("resolved")}>
+            Resolved {issueCounts.resolved}
+          </FilterChip>
+        </div>
+        <div className="spatial-issue-list">
+          {filteredIssues.map((item) => (
+            <button
+              key={item.issue_id}
+              className={item.issue_id === activeIssue?.issue_id ? "spatial-issue-card active" : "spatial-issue-card"}
+              type="button"
+              onClick={() => onSelectIssue(item.issue_id)}
+            >
+              <span className={`issue-marker ${item.status === "approved" ? "resolved" : issueTone(item)}`}>
+                {item.status === "approved" ? <Check size={15} /> : issueTone(item) === "warning" ? "!" : ""}
+              </span>
+              <span className="spatial-issue-copy">
+                <strong>{issueCode(item)} {issueTitle(item)}</strong>
+                <small>{locationLine(item)}</small>
+                <span>{item.description || item.recommended_action}</span>
+                <em>
+                  <FileText size={14} />
+                  {String(item.plan_location.sheet_id ?? item.requirement.source ?? PLAN_LABEL)}
+                  <FileImage size={14} />
+                  {item.evidence.length || 1}
+                </em>
+              </span>
+              <span className={`mini-status ${item.status}`}>{statusLabel(item.status)}</span>
+            </button>
+          ))}
+        </div>
+        <button className="add-issue-button" type="button">
+          <span>+</span>
+          Add Issue
+        </button>
+      </aside>
+
+      <section className="model-workspace">
+        <div className="model-toolbar" aria-label="3D tools">
+          <button className="tool-button active" type="button" title="Select">
+            <MousePointer2 size={20} />
+          </button>
+          <button className="tool-button" type="button" title="Pan">
+            <Hand size={20} />
+          </button>
+          <button className="tool-button" type="button" title="Rotate">
+            <RotateCcw size={20} />
+          </button>
+          <button className="tool-button" type="button" title="Fit">
+            <Maximize size={20} />
+          </button>
+          <button className="tool-button" type="button" title="Model">
+            <Box size={20} />
+          </button>
+          <button className="tool-button" type="button" title="Grid">
+            <Grid3X3 size={20} />
+          </button>
+          <button className="tool-button" type="button" title="Measure">
+            <Ruler size={20} />
+          </button>
+        </div>
+
+        <div className="view-toggle" aria-label="Plan view mode">
+          <button type="button">2D Plan</button>
+          <button className="active" type="button">3D Model</button>
+        </div>
+
+        <div className="model-stage">
+          <img src={PLAN2FIELD_3D_SRC} alt="Buili Plan2Field 3D model generated from PDF drawing" />
+          {pins.map((pin) => (
+            <button
+              key={pin.issueId}
+              className={`model-pin ${pin.tone} ${pin.issueId === activeIssue?.issue_id ? "active" : ""}`}
+              style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
+              type="button"
+              onClick={() => onSelectIssue(pin.issueId)}
+              title={pin.title}
+            >
+              <MapPin size={34} fill="currentColor" />
+              <span>{pin.code}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="floor-key">
+          <strong>Floor Plan Key</strong>
+          <span><i className="key-dot open" /> Open</span>
+          <span><i className="key-dot review" /> In Review</span>
+          <span><i className="key-dot resolved" /> Resolved</span>
+        </div>
+
+        <div className="mini-map-card">
+          <img src={PLAN2FIELD_MINIMAP_SRC} alt="2D plan minimap" />
+          {pins.slice(0, 8).map((pin) => (
+            <span
+              key={pin.issueId}
+              className={`mini-map-pin ${pin.tone}`}
+              style={{ left: `${pin.minimapX}%`, top: `${pin.minimapY}%` }}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="spatial-bottom-panel">
+        <div className="bottom-evidence">
+          <PanelTitle label="Field Evidence" count={Math.max(mediaAssets.length, activeIssue?.evidence.length ?? 0)} />
+          <div className="thumb-row">
+            <EvidenceThumb src={FIELD_IMAGE_SRC} label="Outlet close-up" />
+            <EvidenceThumb src={PLAN_IMAGE_SRC} label="Marked plan area" />
+            <EvidenceThumb src={PLAN2FIELD_3D_SRC} label="3D spatial view" />
+          </div>
+        </div>
+        <div className="bottom-documents">
+          <PanelTitle label="Documents" count={Math.max(documents.length, 2)} />
+          <div className="doc-strip">
+            <DocThumb src={PLAN2FIELD_MINIMAP_SRC} name={String(activeIssue?.plan_location.sheet_id ?? "A-101.pdf")} />
+            <DocThumb src={PLAN_IMAGE_SRC} name="Spec_Electrical.pdf" />
+          </div>
+        </div>
+        <IssueSummaryPanel
+          issue={activeIssue}
+          selectedPin={selectedPin}
+          onApprove={onApprove}
+          onReject={onReject}
+          onNeedMore={onNeedMore}
+          onRfi={onRfi}
+        />
+      </section>
+    </section>
+  );
+}
+
+function PanelTitle({ label, count }: { label: string; count: number }) {
+  return (
+    <div className="panel-title">
+      <strong>{label}</strong>
+      <span>({count})</span>
+    </div>
+  );
+}
+
+function EvidenceThumb({ src, label }: { src: string; label: string }) {
+  return (
+    <figure className="evidence-thumb">
+      <img src={src} alt={label} />
+      <figcaption>{label}</figcaption>
+    </figure>
+  );
+}
+
+function DocThumb({ src, name }: { src: string; name: string }) {
+  return (
+    <figure className="doc-thumb">
+      <img src={src} alt={name} />
+      <figcaption>
+        <span>{name}</span>
+        <b>PDF</b>
+      </figcaption>
+    </figure>
+  );
+}
+
+function IssueSummaryPanel({
+  issue,
+  selectedPin,
+  onApprove,
+  onReject,
+  onNeedMore,
+  onRfi
+}: {
+  issue?: Issue;
+  selectedPin?: ReturnType<typeof buildModelPins>[number];
+  onApprove: (id: string) => void;
+  onReject: (id: string) => void;
+  onNeedMore: (id: string) => void;
+  onRfi: (id: string) => void;
+}) {
+  if (!issue) {
+    return (
+      <aside className="issue-summary-panel">
+        <strong>Issue Summary</strong>
+        <p>No issue selected.</p>
+      </aside>
+    );
+  }
+  return (
+    <aside className="issue-summary-panel">
+      <strong>Issue Summary</strong>
+      <dl>
+        <div>
+          <dt>Confidence</dt>
+          <dd>
+            <span className={issue.confidence >= 0.7 ? "confidence-high" : "confidence-medium"}>
+              {issue.confidence >= 0.7 ? "High" : "Review"}
+            </span>
+            {Math.round(issue.confidence * 100)}%
+          </dd>
+        </div>
+        <div>
+          <dt>Recommended Action</dt>
+          <dd>{issue.recommended_action}</dd>
+        </div>
+        <div>
+          <dt>Assignee</dt>
+          <dd>{issue.assignee || issue.subcontractor || "Field PM"}</dd>
+        </div>
+        <div>
+          <dt>Due Date</dt>
+          <dd>{issue.due_date || "Open"}</dd>
+        </div>
+        <div>
+          <dt>Spatial Pin</dt>
+          <dd>{selectedPin?.code ?? issueCode(issue)}</dd>
+        </div>
+      </dl>
+      <div className="summary-actions">
+        <button type="button" onClick={() => onApprove(issue.issue_id)}>
+          <Check size={16} />
+          Approve
+        </button>
+        <button type="button" onClick={() => onNeedMore(issue.issue_id)}>
+          <MoreHorizontal size={16} />
+          More
+        </button>
+        <button type="button" onClick={() => onRfi(issue.issue_id)}>
+          <MessageSquarePlus size={16} />
+          RFI
+        </button>
+        <button type="button" onClick={() => onReject(issue.issue_id)}>
+          <X size={16} />
+          Reject
+        </button>
+      </div>
+    </aside>
+  );
+}
+
 function IssueInspector({
   issue,
   onApprove,
@@ -675,6 +1179,7 @@ function IssueInspector({
         <EvidenceBlock title="Observation" text={String(issue.observation.text ?? "")} source={String(issue.observation.media_id ?? "")} />
         <EvidenceBlock title="Recommended action" text={issue.recommended_action} source="human review gate" />
       </div>
+      <SpatialEvidenceSummary issue={issue} />
       <div className="action-bar">
         <button className="icon-button approve" type="button" onClick={() => onApprove(issue.issue_id)}>
           <Check size={18} />
@@ -694,6 +1199,52 @@ function IssueInspector({
         </button>
       </div>
     </article>
+  );
+}
+
+function SpatialEvidenceSummary({ issue }: { issue: Issue }) {
+  const context = issue.spatial_context;
+  const features = context?.geometry_features ?? {};
+  if (!context?.spatial_evidence_id) {
+    return (
+      <section className="spatial-summary muted">
+        <span>Plan2Field-3D</span>
+        <strong>Spatial evidence pending</strong>
+        <p>Run review with spatial enabled to add room graph, alignment, and geometry evidence.</p>
+      </section>
+    );
+  }
+  return (
+    <section className="spatial-summary">
+      <div className="spatial-summary-head">
+        <span>Plan2Field-3D</span>
+        <strong>{String(context.room_graph_id ?? "room pending")}</strong>
+      </div>
+      <p>{String(context.spatial_note ?? "Spatial evidence generated for PM review.")}</p>
+      <dl>
+        <div>
+          <dt>Alignment</dt>
+          <dd>{percent(Number(context.alignment_confidence ?? features.room_alignment_confidence ?? 0))}</dd>
+        </div>
+        <div>
+          <dt>Geometry</dt>
+          <dd>{percent(Number(context.geometry_confidence ?? features.geometry_confidence ?? 0))}</dd>
+        </div>
+        <div>
+          <dt>Coverage</dt>
+          <dd>{percent(Number(features.field_coverage_ratio ?? 0))}</dd>
+        </div>
+        <div>
+          <dt>Count</dt>
+          <dd>
+            {String(features.observed_count ?? 0)} / {String(features.required_count ?? 0)}
+          </dd>
+        </div>
+      </dl>
+      <small>
+        {String(context.spatial_evidence_id)} · {String(context.snapshot_uri ?? "snapshot pending")}
+      </small>
+    </section>
   );
 }
 
@@ -877,7 +1428,18 @@ function PipelineView({
   apiBase: string;
   technologyStatus: TechnologyStatus[];
 }) {
-  const states = ["queued", "ingesting", "indexing", "extracting_frames", "detecting", "reasoning", "review_ready"];
+  const states = [
+    "queued",
+    "ingesting",
+    "indexing",
+    "extracting_frames",
+    "detecting",
+    "spatializing_plan",
+    "reconstructing_field",
+    "aligning_plan_field",
+    "reasoning",
+    "review_ready"
+  ];
   return (
     <section className="pipeline-panel">
       <div className="section-title-row">
@@ -911,9 +1473,74 @@ function PipelineView({
   );
 }
 
+function buildModelPins(issues: Issue[], overlay: Overlay | null) {
+  const fallback = [
+    { x: 34, y: 42, minimapX: 35, minimapY: 42 },
+    { x: 56, y: 51, minimapX: 58, minimapY: 55 },
+    { x: 67, y: 35, minimapX: 70, minimapY: 36 },
+    { x: 45, y: 62, minimapX: 47, minimapY: 64 },
+    { x: 75, y: 48, minimapX: 78, minimapY: 50 },
+    { x: 29, y: 58, minimapX: 30, minimapY: 60 }
+  ];
+  return issues.slice(0, 8).map((issue, index) => {
+    const pin = overlay?.pins.find((item) => item.id === issue.issue_id);
+    const point = fallback[index % fallback.length];
+    const tone = issue.status === "approved" ? "resolved" : issueTone(issue);
+    return {
+      issueId: issue.issue_id,
+      code: issueCode(issue),
+      title: issue.title,
+      tone,
+      x: pin ? 16 + pin.x * 68 : point.x,
+      y: pin ? 16 + pin.y * 62 : point.y,
+      minimapX: pin ? pin.x * 100 : point.minimapX,
+      minimapY: pin ? pin.y * 100 : point.minimapY
+    };
+  });
+}
+
+function issueCode(issue: Issue) {
+  const explicitCode = String(issue.plan_location.code ?? issue.requirement.code ?? "");
+  if (explicitCode) return explicitCode;
+  const source = String(issue.requirement.source ?? issue.plan_location.sheet_id ?? "");
+  const sheet = source.match(/[A-Z]\d(?:\.\d)?/i)?.[0]?.toUpperCase();
+  if (sheet) return sheet;
+  const prefix = issue.discipline.startsWith("mech") ? "M" : issue.discipline.startsWith("plumb") ? "P" : "E";
+  const compact = issue.issue_id.replace(/[^a-z0-9]/gi, "").slice(-2).toUpperCase() || "1";
+  return `${prefix}${compact}`;
+}
+
+function issueTitle(issue: Issue) {
+  const words = issue.title.split(/\s+/).filter(Boolean);
+  return words.length > 5 ? `${words.slice(0, 5).join(" ")}...` : issue.title;
+}
+
+function issueTone(issue: Issue) {
+  if (issue.status === "needs_more_evidence") return "review";
+  if (issue.severity === "minor" || issue.severity === "informational") return "warning";
+  return "open";
+}
+
+function statusLabel(status: string) {
+  if (status === "approved") return "Resolved";
+  if (status === "needs_more_evidence") return "In Review";
+  if (status === "rejected_false_positive") return "Rejected";
+  return "Open";
+}
+
+function locationLine(issue: Issue) {
+  const level = String(issue.plan_location.level ?? issue.plan_location.sheet_id ?? "Level 1");
+  return `${level} / ${issue.room || "Field area"}`;
+}
+
 function avg(values: number[]) {
   if (!values.length) return 0;
   return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function percent(value: number) {
+  if (!Number.isFinite(value)) return "0%";
+  return `${Math.round(value * 100)}%`;
 }
 
 function shortId(value: string) {
