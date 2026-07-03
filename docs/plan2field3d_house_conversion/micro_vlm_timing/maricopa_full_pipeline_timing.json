@@ -1,0 +1,710 @@
+{
+  "input_pdf": "data/sources/plan2field3d_house/maricopa_sample_floor_plan.pdf",
+  "preview_png": "docs/plan2field3d_house_conversion/micro_vlm_timing/auto_plan2field3d.png",
+  "total_automatic_pipeline_seconds": 6.4578,
+  "stages": {
+    "automatic_pdf_to_3d_seconds": 6.4577
+  },
+  "auto_summary": {
+    "input_pdf": "data/sources/plan2field3d_house/maricopa_sample_floor_plan.pdf",
+    "scene_json": "docs/plan2field3d_house_conversion/micro_vlm_timing/auto_semantic_scene.json",
+    "preview_png": "docs/plan2field3d_house_conversion/micro_vlm_timing/auto_plan2field3d.png",
+    "alignment_overlay_png": "docs/plan2field3d_house_conversion/micro_vlm_timing/auto_alignment_overlay.png",
+    "scene_build": {
+      "method": "automatic_pdf_to_semantic_scene_v1",
+      "total_scene_build_seconds": 5.8879,
+      "stages": {
+        "pdf_page_render_seconds": 0.337,
+        "wall_segments_and_crop_seconds": 0.1892,
+        "text_ocr_seconds": 4.8,
+        "semantic_compile_seconds": 0.5616
+      },
+      "page_image_size_px": [
+        1980,
+        1530
+      ],
+      "crop_bbox_px": [
+        373,
+        321,
+        1562,
+        1265
+      ],
+      "crop_size_px": [
+        1189,
+        944
+      ],
+      "wall_metadata": {
+        "image_size_px": [
+          1980,
+          1530
+        ],
+        "raw_axis_segments": 49,
+        "merged_axis_segments": 49,
+        "min_length_px": 51,
+        "y_window": [
+          0.16,
+          0.9
+        ]
+      },
+      "filtered_wall_segments": 48,
+      "embedded_text_items": 0,
+      "text_items": 55,
+      "ocr": {
+        "engine": "easyocr",
+        "available": true,
+        "reader_init_seconds": 3.7186,
+        "ocr_seconds": 0.6146,
+        "raw_results": 40,
+        "kept_results": 34
+      },
+      "scaled_ocr": {
+        "engine": "easyocr",
+        "available": true,
+        "reader_init_seconds": 0.0,
+        "ocr_seconds": 0.3837,
+        "raw_results": 46,
+        "kept_results": 37,
+        "scale": 1.4
+      },
+      "micro_vlm": {
+        "enabled": true,
+        "path": "/SSD/guest/chojoonghui/Buili/data/artifacts/plan2field_micro_vlm/micro_vlm.pt",
+        "device": "cuda:0",
+        "classes": [
+          "background",
+          "bathtub",
+          "cabinet_run",
+          "ceiling_light",
+          "door",
+          "duplex_outlet",
+          "fixture_tag",
+          "sink",
+          "shower",
+          "smoke_detector",
+          "switch",
+          "toilet",
+          "washer_dryer",
+          "water_heater",
+          "window"
+        ],
+        "config": {
+          "image_size": 128,
+          "dim": 128,
+          "depth": 2,
+          "heads": 4,
+          "task_vocab": 8
+        },
+        "summary": {
+          "status": "trained",
+          "model_family": "Buili Plan2Field Micro-VLM",
+          "architecture": "cnn_patch_encoder_text_task_token_tiny_transformer",
+          "production_role": "primary_lightweight_vlm_plan_patch_parser",
+          "dataset": "data/processed/plan2field_micro_vlm/dataset.jsonl",
+          "classes": [
+            "background",
+            "bathtub",
+            "cabinet_run",
+            "ceiling_light",
+            "door",
+            "duplex_outlet",
+            "fixture_tag",
+            "sink",
+            "shower",
+            "smoke_detector",
+            "switch",
+            "toilet",
+            "washer_dryer",
+            "water_heater",
+            "window"
+          ],
+          "epochs": 14,
+          "train_rows": 1119,
+          "eval_rows": 183,
+          "seconds": 26.3723,
+          "gpu": {
+            "cuda_visible_devices": "7",
+            "required_device": "7",
+            "policy": "single_gpu_only"
+          },
+          "torch_device": "NVIDIA RTX A6000",
+          "config": {
+            "image_size": 128,
+            "dim": 128,
+            "depth": 2,
+            "heads": 4,
+            "task_vocab": 8
+          },
+          "final_eval": {
+            "class_acc": 0.8579234972677595,
+            "positive_class_acc": 0.8364779874213837,
+            "positive_bbox_l1": 0.0009060216212422593,
+            "samples": 183,
+            "positive_samples": 159,
+            "epoch": 14,
+            "train_loss": 0.10663288521269958
+          },
+          "history": [
+            {
+              "class_acc": 0.639344262295082,
+              "positive_class_acc": 0.5849056603773585,
+              "positive_bbox_l1": 0.0011007658340646037,
+              "samples": 183,
+              "positive_samples": 159,
+              "epoch": 1,
+              "train_loss": 1.751074840625127
+            },
+            {
+              "class_acc": 0.6994535519125683,
+              "positive_class_acc": 0.6540880503144654,
+              "positive_bbox_l1": 0.0009939194475329896,
+              "samples": 183,
+              "positive_samples": 159,
+              "epoch": 2,
+              "train_loss": 1.0308307309945424
+            },
+            {
+              "class_acc": 0.726775956284153,
+              "positive_class_acc": 0.6855345911949685,
+              "positive_bbox_l1": 0.0009976278685923643,
+              "samples": 183,
+              "positive_samples": 159,
+              "epoch": 3,
+              "train_loss": 0.8416335185368856
+            },
+            {
+              "class_acc": 0.7814207650273224,
+              "positive_class_acc": 0.7484276729559748,
+              "positive_bbox_l1": 0.0009352927500346921,
+              "samples": 183,
+              "positive_samples": 159,
+              "epoch": 4,
+              "train_loss": 0.7102275937795639
+            },
+            {
+              "class_acc": 0.825136612021858,
+              "positive_class_acc": 0.7987421383647799,
+              "positive_bbox_l1": 0.0009641533471503348,
+              "samples": 183,
+              "positive_samples": 159,
+              "epoch": 5,
+              "train_loss": 0.5764730448524157
+            },
+            {
+              "class_acc": 0.8579234972677595,
+              "positive_class_acc": 0.8364779874213837,
+              "positive_bbox_l1": 0.0009650812490181353,
+              "samples": 183,
+              "positive_samples": 159,
+              "epoch": 6,
+              "train_loss": 0.4379888226588567
+            },
+            {
+              "class_acc": 0.8579234972677595,
+              "positive_class_acc": 0.8364779874213837,
+              "positive_bbox_l1": 0.0009360622216320638,
+              "samples": 183,
+              "positive_samples": 159,
+              "epoch": 7,
+              "train_loss": 0.3272852885226409
+            },
+            {
+              "class_acc": 0.8633879781420765,
+              "positive_class_acc": 0.8427672955974843,
+              "positive_bbox_l1": 0.000903646244942767,
+              "samples": 183,
+              "positive_samples": 159,
+              "epoch": 8,
+              "train_loss": 0.30205559606353444
+            },
+            {
+              "class_acc": 0.8688524590163934,
+              "positive_class_acc": 0.8490566037735849,
+              "positive_bbox_l1": 0.0008903809313504201,
+              "samples": 183,
+              "positive_samples": 159,
+              "epoch": 9,
+              "train_loss": 0.24836090952157974
+            },
+            {
+              "class_acc": 0.8743169398907104,
+              "positive_class_acc": 0.8553459119496856,
+              "positive_bbox_l1": 0.000887448307853075,
+              "samples": 183,
+              "positive_samples": 159,
+              "epoch": 10,
+              "train_loss": 0.19478439477582773
+            },
+            {
+              "class_acc": 0.825136612021858,
+              "positive_class_acc": 0.7987421383647799,
+              "positive_bbox_l1": 0.0008671879299781607,
+              "samples": 183,
+              "positive_samples": 159,
+              "epoch": 11,
+              "train_loss": 0.16782393492758274
+            },
+            {
+              "class_acc": 0.8688524590163934,
+              "positive_class_acc": 0.8490566037735849,
+              "positive_bbox_l1": 0.0008399803777160885,
+              "samples": 183,
+              "positive_samples": 159,
+              "epoch": 12,
+              "train_loss": 0.16028394363820553
+            },
+            {
+              "class_acc": 0.8797814207650273,
+              "positive_class_acc": 0.8616352201257862,
+              "positive_bbox_l1": 0.0008366373631189454,
+              "samples": 183,
+              "positive_samples": 159,
+              "epoch": 13,
+              "train_loss": 0.11253899832566579
+            },
+            {
+              "class_acc": 0.8579234972677595,
+              "positive_class_acc": 0.8364779874213837,
+              "positive_bbox_l1": 0.0009060216212422593,
+              "samples": 183,
+              "positive_samples": 159,
+              "epoch": 14,
+              "train_loss": 0.10663288521269958
+            }
+          ],
+          "runtime_contract": {
+            "max_patch_grid_seconds_target": 1.4,
+            "fallback": "deterministic_geometry_and_ocr_remain_enabled",
+            "output_schema": "SemanticObject/SemanticOpening merged into SemanticScene JSON"
+          }
+        },
+        "seconds": 0.3308,
+        "patches_scanned": 42,
+        "grid_raw_predictions": 0,
+        "raw_predictions": 63,
+        "objects_added": 39,
+        "openings_added": 15,
+        "rejected_predictions": 0,
+        "threshold": 0.48,
+        "patch_px": 224,
+        "stride_px": 176,
+        "proposal_verification": {
+          "proposal_objects": 48,
+          "proposal_openings": 15,
+          "proposal_object_predictions": 48,
+          "proposal_opening_predictions": 15,
+          "verified_objects": 39,
+          "verified_openings": 15,
+          "corrected_objects": 7,
+          "corrected_openings": 0,
+          "verify_threshold": 0.55,
+          "correction_threshold": 0.82
+        },
+        "production_role": "primary_lightweight_vlm_plan_patch_parser"
+      },
+      "counts": {
+        "walls": 48,
+        "openings": 15,
+        "objects": 17,
+        "labels": 16,
+        "tags": 0,
+        "dimensions": 5
+      },
+      "quality_gates": {
+        "manual_semantic_seed_used": false,
+        "micro_vlm_primary_parser_enabled": true,
+        "object_candidates_before_dedupe": 88,
+        "ocr_text_object_candidates": 0,
+        "circle_object_candidates": 37,
+        "component_object_candidates": 11,
+        "micro_vlm_object_candidates": 39,
+        "micro_vlm_opening_candidates": 15,
+        "detail_object_candidates": 1,
+        "object_candidates_after_dedupe": 17,
+        "gap_door_candidates": 8,
+        "colored_window_candidates": 7,
+        "room_label_count": 16,
+        "wall_count": 48,
+        "automatic_scene_ready": true
+      }
+    },
+    "alignment_qa": {
+      "available": true,
+      "coordinate_transform_error_px": 0.0,
+      "wall_distance_to_source_dark_px": {
+        "mean_px": 0.036,
+        "p95_px": 0.0,
+        "max_px": 1.91
+      },
+      "wall_failure_count": 0,
+      "wall_failures": [],
+      "object_evidence": [
+        {
+          "id": "auto_detail_142",
+          "kind": "fixture_tag",
+          "center_px": [
+            651.59,
+            542.43
+          ],
+          "dark_fraction": 0.4306,
+          "source_note": "auto_cv_detail_component:room=DINING ROOM,area=119,density=0.12"
+        },
+        {
+          "id": "micro_vlm_corrected_auto_circle_006",
+          "kind": "bathtub",
+          "center_px": [
+            1006.0,
+            502.0
+          ],
+          "dark_fraction": 0.2327,
+          "source_note": "micro_vlm_corrected:toilet->bathtub,conf=0.94;base=auto_hough_circle_fixture_candidate"
+        },
+        {
+          "id": "micro_vlm_corrected_auto_circle_037",
+          "kind": "shower",
+          "center_px": [
+            1056.0,
+            331.0
+          ],
+          "dark_fraction": 0.111,
+          "source_note": "micro_vlm_corrected:toilet->shower,conf=0.93;base=auto_hough_circle_fixture_candidate"
+        },
+        {
+          "id": "micro_vlm_corrected_auto_circle_089",
+          "kind": "shower",
+          "center_px": [
+            461.0,
+            539.0
+          ],
+          "dark_fraction": 0.3703,
+          "source_note": "micro_vlm_corrected:toilet->shower,conf=0.95;base=auto_hough_circle_fixture_candidate"
+        },
+        {
+          "id": "micro_vlm_corrected_auto_circle_094",
+          "kind": "cabinet_run",
+          "center_px": [
+            524.0,
+            606.0
+          ],
+          "dark_fraction": 0.1547,
+          "source_note": "micro_vlm_corrected:water_heater->cabinet_run,conf=0.92;base=auto_hough_circle_fixture_candidate"
+        },
+        {
+          "id": "micro_vlm_verified_auto_circle_024",
+          "kind": "toilet",
+          "center_px": [
+            461.0,
+            496.0
+          ],
+          "dark_fraction": 0.393,
+          "source_note": "micro_vlm_verified:kind=toilet,conf=0.86;base=auto_hough_circle_fixture_candidate"
+        },
+        {
+          "id": "micro_vlm_verified_auto_circle_030",
+          "kind": "toilet",
+          "center_px": [
+            416.0,
+            429.0
+          ],
+          "dark_fraction": 0.1265,
+          "source_note": "micro_vlm_verified:kind=toilet,conf=0.97;base=auto_hough_circle_fixture_candidate"
+        },
+        {
+          "id": "micro_vlm_verified_auto_circle_038",
+          "kind": "toilet",
+          "center_px": [
+            346.0,
+            501.0
+          ],
+          "dark_fraction": 0.3195,
+          "source_note": "micro_vlm_verified:kind=toilet,conf=0.96;base=auto_hough_circle_fixture_candidate"
+        },
+        {
+          "id": "micro_vlm_verified_auto_circle_098",
+          "kind": "toilet",
+          "center_px": [
+            1071.0,
+            421.0
+          ],
+          "dark_fraction": 0.2054,
+          "source_note": "micro_vlm_verified:kind=toilet,conf=0.98;base=auto_hough_circle_fixture_candidate"
+        },
+        {
+          "id": "micro_vlm_verified_auto_circle_113",
+          "kind": "water_heater",
+          "center_px": [
+            554.0,
+            692.0
+          ],
+          "dark_fraction": 0.1759,
+          "source_note": "micro_vlm_verified:kind=water_heater,conf=0.97;base=auto_hough_circle_fixture_candidate"
+        },
+        {
+          "id": "micro_vlm_verified_auto_component_082",
+          "kind": "shower",
+          "center_px": [
+            986.03,
+            322.82
+          ],
+          "dark_fraction": 0.1974,
+          "source_note": "micro_vlm_verified:kind=shower,conf=0.98;base=auto_cv_component_after_text_and_wall_removal:room=CLOSET,density=0.08"
+        },
+        {
+          "id": "micro_vlm_verified_auto_component_099",
+          "kind": "cabinet_run",
+          "center_px": [
+            620.82,
+            390.57
+          ],
+          "dark_fraction": 0.2292,
+          "source_note": "micro_vlm_verified:kind=cabinet_run,conf=0.98;base=auto_cv_component_after_text_and_wall_removal:room=KITCHEN,density=0.14"
+        },
+        {
+          "id": "micro_vlm_verified_auto_component_109",
+          "kind": "sink",
+          "center_px": [
+            382.63,
+            407.44
+          ],
+          "dark_fraction": 0.2997,
+          "source_note": "micro_vlm_verified:kind=sink,conf=0.96;base=auto_cv_component_after_text_and_wall_removal:room=BATHROOM,density=0.09"
+        },
+        {
+          "id": "micro_vlm_verified_auto_component_112",
+          "kind": "shower",
+          "center_px": [
+            433.5,
+            448.87
+          ],
+          "dark_fraction": 0.204,
+          "source_note": "micro_vlm_verified:kind=shower,conf=0.95;base=auto_cv_component_after_text_and_wall_removal:room=BATHROOM,density=0.08"
+        },
+        {
+          "id": "micro_vlm_verified_auto_component_123",
+          "kind": "shower",
+          "center_px": [
+            343.49,
+            473.94
+          ],
+          "dark_fraction": 0.1964,
+          "source_note": "micro_vlm_verified:kind=shower,conf=0.98;base=auto_cv_component_after_text_and_wall_removal:room=BATHROOM,density=0.20"
+        },
+        {
+          "id": "micro_vlm_verified_auto_component_144",
+          "kind": "cabinet_run",
+          "center_px": [
+            609.2,
+            572.59
+          ],
+          "dark_fraction": 0.2131,
+          "source_note": "micro_vlm_verified:kind=cabinet_run,conf=0.97;base=auto_cv_component_after_text_and_wall_removal:room=KITCHEN,density=0.13"
+        },
+        {
+          "id": "micro_vlm_verified_auto_component_187",
+          "kind": "washer_dryer",
+          "center_px": [
+            498.16,
+            657.49
+          ],
+          "dark_fraction": 0.2257,
+          "source_note": "micro_vlm_verified:kind=washer_dryer,conf=0.97;base=auto_cv_component_after_text_and_wall_removal:room=LAUNDRY,density=0.14"
+        }
+      ],
+      "weak_object_count": 0,
+      "weak_objects": [],
+      "opening_clearance": [
+        {
+          "id": "micro_vlm_verified_auto_door_001",
+          "kind": "door",
+          "center_px": [
+            612.0,
+            224.0
+          ],
+          "center_dark_fraction": 0.125
+        },
+        {
+          "id": "micro_vlm_verified_auto_door_002",
+          "kind": "door",
+          "center_px": [
+            373.5,
+            384.0
+          ],
+          "center_dark_fraction": 0.2895
+        },
+        {
+          "id": "micro_vlm_verified_auto_door_003",
+          "kind": "door",
+          "center_px": [
+            554.5,
+            624.0
+          ],
+          "center_dark_fraction": 0.0
+        },
+        {
+          "id": "micro_vlm_verified_auto_door_004",
+          "kind": "door",
+          "center_px": [
+            472.0,
+            358.0
+          ],
+          "center_dark_fraction": 0.0
+        },
+        {
+          "id": "micro_vlm_verified_auto_door_005",
+          "kind": "door",
+          "center_px": [
+            472.0,
+            706.0
+          ],
+          "center_dark_fraction": 0.2143
+        },
+        {
+          "id": "micro_vlm_verified_auto_door_006",
+          "kind": "door",
+          "center_px": [
+            928.0,
+            300.0
+          ],
+          "center_dark_fraction": 0.284
+        },
+        {
+          "id": "micro_vlm_verified_auto_door_007",
+          "kind": "door",
+          "center_px": [
+            64.0,
+            585.0
+          ],
+          "center_dark_fraction": 0.125
+        },
+        {
+          "id": "micro_vlm_verified_auto_door_008",
+          "kind": "door",
+          "center_px": [
+            1032.0,
+            415.5
+          ],
+          "center_dark_fraction": 0.0
+        },
+        {
+          "id": "micro_vlm_verified_auto_window_marker_001",
+          "kind": "window",
+          "center_px": [
+            1070.5,
+            23.5
+          ],
+          "center_dark_fraction": 0.2415
+        },
+        {
+          "id": "micro_vlm_verified_auto_window_marker_002",
+          "kind": "window",
+          "center_px": [
+            403.5,
+            73.5
+          ],
+          "center_dark_fraction": 0.3565
+        },
+        {
+          "id": "micro_vlm_verified_auto_window_marker_003",
+          "kind": "window",
+          "center_px": [
+            554.5,
+            227.0
+          ],
+          "center_dark_fraction": 0.3817
+        },
+        {
+          "id": "micro_vlm_verified_auto_window_marker_004",
+          "kind": "window",
+          "center_px": [
+            806.5,
+            227.0
+          ],
+          "center_dark_fraction": 0.25
+        },
+        {
+          "id": "micro_vlm_verified_auto_window_marker_005",
+          "kind": "window",
+          "center_px": [
+            197.0,
+            325.5
+          ],
+          "center_dark_fraction": 0.3743
+        },
+        {
+          "id": "micro_vlm_verified_auto_window_marker_006",
+          "kind": "window",
+          "center_px": [
+            756.5,
+            747.5
+          ],
+          "center_dark_fraction": 0.3432
+        },
+        {
+          "id": "micro_vlm_verified_auto_window_marker_007",
+          "kind": "window",
+          "center_px": [
+            1078.5,
+            835.5
+          ],
+          "center_dark_fraction": 0.4364
+        }
+      ],
+      "quality_gate_passed": true,
+      "overlay_png": "docs/plan2field3d_house_conversion/micro_vlm_timing/auto_alignment_overlay.png"
+    },
+    "render": {
+      "preview_png": "docs/plan2field3d_house_conversion/micro_vlm_timing/auto_plan2field3d.png",
+      "elapsed_seconds": 0.462,
+      "surface_count": 685,
+      "source_scope": "automatic_pdf_semantic_scene_extraction",
+      "counts": {
+        "walls": 48,
+        "openings": 15,
+        "objects": 17,
+        "labels": 16,
+        "tags": 0,
+        "dimensions": 5
+      },
+      "render_contract": "deterministic_source_px_to_scene_m_low_poly_presentation",
+      "procedural_asset_modules": [
+        "bathtub",
+        "cabinet_run",
+        "fixture_tag",
+        "shower",
+        "sink",
+        "toilet",
+        "washer_dryer",
+        "water_heater"
+      ],
+      "wall_render_segments": 50,
+      "wall_opening_gaps": 25
+    },
+    "total_seconds": 6.3514,
+    "qa": {
+      "manual_semantic_seed_used": false,
+      "ocr_used": true,
+      "wall_openings_cut_from_render_geometry": true,
+      "procedural_asset_generation_used": true
+    }
+  },
+  "output_png": {
+    "size_px": [
+      1280,
+      1024
+    ],
+    "bytes": 498269
+  },
+  "included": [
+    "PDF read and page raster render",
+    "OpenCV wall-line extraction and PlanGraph payload generation",
+    "EasyOCR room/dimension text extraction when embedded PDF text is unavailable",
+    "Plan2Field Micro-VLM candidate verification and lightweight patch parsing",
+    "Automatic SemanticScene compile without manual seed",
+    "Wall opening cut",
+    "Procedural low-poly object generation",
+    "Isometric PNG rendering"
+  ],
+  "not_included_in_current_measured_path": [
+    "Large cloud VLM fallback",
+    "Manual review time"
+  ]
+}

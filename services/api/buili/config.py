@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     cors_origins: str = "*"
     max_upload_bytes: int = 250 * 1024 * 1024
     redis_url: str = "redis://localhost:6379/0"
+    spatial_enabled: bool = True
+    spatial_alignment_min_confidence: float = 0.5
     r2_account_id: str = ""
     r2_access_key_id: str = ""
     r2_secret_access_key: str = ""

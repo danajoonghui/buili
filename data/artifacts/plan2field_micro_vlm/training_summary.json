@@ -1,0 +1,183 @@
+{
+  "status": "trained",
+  "model_family": "Buili Plan2Field Micro-VLM",
+  "architecture": "cnn_patch_encoder_text_task_token_tiny_transformer",
+  "production_role": "primary_lightweight_vlm_plan_patch_parser",
+  "dataset": "data/processed/plan2field_micro_vlm/dataset.jsonl",
+  "classes": [
+    "background",
+    "bathtub",
+    "cabinet_run",
+    "ceiling_light",
+    "door",
+    "duplex_outlet",
+    "fixture_tag",
+    "sink",
+    "shower",
+    "smoke_detector",
+    "switch",
+    "toilet",
+    "washer_dryer",
+    "water_heater",
+    "window"
+  ],
+  "epochs": 14,
+  "train_rows": 1119,
+  "eval_rows": 183,
+  "seconds": 26.3723,
+  "gpu": {
+    "cuda_visible_devices": "7",
+    "required_device": "7",
+    "policy": "single_gpu_only"
+  },
+  "torch_device": "NVIDIA RTX A6000",
+  "config": {
+    "image_size": 128,
+    "dim": 128,
+    "depth": 2,
+    "heads": 4,
+    "task_vocab": 8
+  },
+  "final_eval": {
+    "class_acc": 0.8579234972677595,
+    "positive_class_acc": 0.8364779874213837,
+    "positive_bbox_l1": 0.0009060216212422593,
+    "samples": 183,
+    "positive_samples": 159,
+    "epoch": 14,
+    "train_loss": 0.10663288521269958
+  },
+  "history": [
+    {
+      "class_acc": 0.639344262295082,
+      "positive_class_acc": 0.5849056603773585,
+      "positive_bbox_l1": 0.0011007658340646037,
+      "samples": 183,
+      "positive_samples": 159,
+      "epoch": 1,
+      "train_loss": 1.751074840625127
+    },
+    {
+      "class_acc": 0.6994535519125683,
+      "positive_class_acc": 0.6540880503144654,
+      "positive_bbox_l1": 0.0009939194475329896,
+      "samples": 183,
+      "positive_samples": 159,
+      "epoch": 2,
+      "train_loss": 1.0308307309945424
+    },
+    {
+      "class_acc": 0.726775956284153,
+      "positive_class_acc": 0.6855345911949685,
+      "positive_bbox_l1": 0.0009976278685923643,
+      "samples": 183,
+      "positive_samples": 159,
+      "epoch": 3,
+      "train_loss": 0.8416335185368856
+    },
+    {
+      "class_acc": 0.7814207650273224,
+      "positive_class_acc": 0.7484276729559748,
+      "positive_bbox_l1": 0.0009352927500346921,
+      "samples": 183,
+      "positive_samples": 159,
+      "epoch": 4,
+      "train_loss": 0.7102275937795639
+    },
+    {
+      "class_acc": 0.825136612021858,
+      "positive_class_acc": 0.7987421383647799,
+      "positive_bbox_l1": 0.0009641533471503348,
+      "samples": 183,
+      "positive_samples": 159,
+      "epoch": 5,
+      "train_loss": 0.5764730448524157
+    },
+    {
+      "class_acc": 0.8579234972677595,
+      "positive_class_acc": 0.8364779874213837,
+      "positive_bbox_l1": 0.0009650812490181353,
+      "samples": 183,
+      "positive_samples": 159,
+      "epoch": 6,
+      "train_loss": 0.4379888226588567
+    },
+    {
+      "class_acc": 0.8579234972677595,
+      "positive_class_acc": 0.8364779874213837,
+      "positive_bbox_l1": 0.0009360622216320638,
+      "samples": 183,
+      "positive_samples": 159,
+      "epoch": 7,
+      "train_loss": 0.3272852885226409
+    },
+    {
+      "class_acc": 0.8633879781420765,
+      "positive_class_acc": 0.8427672955974843,
+      "positive_bbox_l1": 0.000903646244942767,
+      "samples": 183,
+      "positive_samples": 159,
+      "epoch": 8,
+      "train_loss": 0.30205559606353444
+    },
+    {
+      "class_acc": 0.8688524590163934,
+      "positive_class_acc": 0.8490566037735849,
+      "positive_bbox_l1": 0.0008903809313504201,
+      "samples": 183,
+      "positive_samples": 159,
+      "epoch": 9,
+      "train_loss": 0.24836090952157974
+    },
+    {
+      "class_acc": 0.8743169398907104,
+      "positive_class_acc": 0.8553459119496856,
+      "positive_bbox_l1": 0.000887448307853075,
+      "samples": 183,
+      "positive_samples": 159,
+      "epoch": 10,
+      "train_loss": 0.19478439477582773
+    },
+    {
+      "class_acc": 0.825136612021858,
+      "positive_class_acc": 0.7987421383647799,
+      "positive_bbox_l1": 0.0008671879299781607,
+      "samples": 183,
+      "positive_samples": 159,
+      "epoch": 11,
+      "train_loss": 0.16782393492758274
+    },
+    {
+      "class_acc": 0.8688524590163934,
+      "positive_class_acc": 0.8490566037735849,
+      "positive_bbox_l1": 0.0008399803777160885,
+      "samples": 183,
+      "positive_samples": 159,
+      "epoch": 12,
+      "train_loss": 0.16028394363820553
+    },
+    {
+      "class_acc": 0.8797814207650273,
+      "positive_class_acc": 0.8616352201257862,
+      "positive_bbox_l1": 0.0008366373631189454,
+      "samples": 183,
+      "positive_samples": 159,
+      "epoch": 13,
+      "train_loss": 0.11253899832566579
+    },
+    {
+      "class_acc": 0.8579234972677595,
+      "positive_class_acc": 0.8364779874213837,
+      "positive_bbox_l1": 0.0009060216212422593,
+      "samples": 183,
+      "positive_samples": 159,
+      "epoch": 14,
+      "train_loss": 0.10663288521269958
+    }
+  ],
+  "runtime_contract": {
+    "max_patch_grid_seconds_target": 1.4,
+    "fallback": "deterministic_geometry_and_ocr_remain_enabled",
+    "output_schema": "SemanticObject/SemanticOpening merged into SemanticScene JSON"
+  }
+}

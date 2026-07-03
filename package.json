@@ -14,6 +14,8 @@
     "train:smoke": "CUDA_VISIBLE_DEVICES=7 conda run -n cjh_buili python ml/train_doc_layout_smoke.py --epochs 3",
     "train:full": "CUDA_VISIBLE_DEVICES=7 conda run -n cjh_buili python ml/train_full_ai_stack.py --epochs 30",
     "data:open-corpus": "conda run -n cjh_buili python ml/collect_open_construction_corpus.py",
+    "train:micro-vlm:data": "conda run -n cjh_buili python ml/build_plan2field_micro_vlm_dataset.py",
+    "train:micro-vlm": "CUDA_VISIBLE_DEVICES=7 conda run -n cjh_buili python ml/train_plan2field_micro_vlm.py",
     "train:vlm:data": "conda run -n cjh_buili python ml/build_buili_vlm_dataset.py",
     "train:vlm:combine": "conda run -n cjh_buili python ml/build_combined_vlm_open_dataset.py",
     "train:vlm": "HF_HOME=${HF_HOME:-/SSD/guest/chojoonghui/hf_cache} CUDA_VISIBLE_DEVICES=7 conda run -n cjh_buili python ml/train_internvl35_lora.py",

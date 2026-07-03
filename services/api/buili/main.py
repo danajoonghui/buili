@@ -22,9 +22,12 @@ from .models import (
     Issue,
     Job,
     Observation,
+    PlanGraph,
     Project,
     SiteMedia,
     SpecChunk,
+    SpatialAsset,
+    SpatialEvidence,
     UploadIntent,
     new_id,
 )
@@ -55,6 +58,7 @@ from .schemas import (
     UploadPresignRequest,
     UploadPresignResponse,
 )
+from .spatial.router import router as spatial_router
 from .storage import file_sha256, object_path, save_upload
 
 force_gpu_7()
@@ -138,6 +142,9 @@ if (WEB_PUBLIC_ROOT / "plan2field3d").exists():
         StaticFiles(directory=WEB_PUBLIC_ROOT / "plan2field3d"),
         name="plan2field3d",
     )
+
+app.include_router(spatial_router)
+init_db()
 
 
 @app.middleware("http")
@@ -491,6 +498,15 @@ def technology_status(
     issues = session.scalars(select(Issue).where(Issue.project_id == project_id)).all()
     jobs = session.scalars(select(Job).where(Job.project_id == project_id)).all()
     frames = session.scalars(select(Frame).where(Frame.media_id.in_(media_ids))).all()
+    plan_graphs = session.scalars(select(PlanGraph).where(PlanGraph.project_id == project_id)).all()
+    spatial_assets = session.scalars(
+        select(SpatialAsset).where(SpatialAsset.project_id == project_id)
+    ).all()
+    spatial_evidence = session.scalars(
+        select(SpatialEvidence)
+        .join(Issue, Issue.issue_id == SpatialEvidence.issue_id)
+        .where(Issue.project_id == project_id)
+    ).all()
     vlm = _vlm_training_status()
     vlm_trained = vlm.get("status") == "trained"
     vlm_qa_rate = vlm.get("production_prompt_json_valid_rate")
@@ -540,6 +556,16 @@ def technology_status(
             summary=(
                 f"{len(jobs)} pipeline runs available for browser-based issue review, "
                 "approval, RFI, and reporting."
+            ),
+        ),
+        TechnologyStatusOut(
+            key="plan2field_3d",
+            label="Plan2Field 2D drawing to lightweight 3D spatial pipeline",
+            status="ready" if plan_graphs and spatial_assets else "needs_plan_graph",
+            evidence_count=len(spatial_evidence) or len(plan_graphs),
+            summary=(
+                f"{len(plan_graphs)} plan graphs, {len(spatial_assets)} spatial assets, "
+                f"and {len(spatial_evidence)} issue-level spatial evidence links."
             ),
         ),
     ]

@@ -187,6 +187,25 @@ class Issue(TimestampMixin, Base):
 
     project: Mapped[Project] = relationship(back_populates="issues")
     evidence: Mapped[list["IssueEvidence"]] = relationship(back_populates="issue")
+    spatial_evidence: Mapped[list["SpatialEvidence"]] = relationship(back_populates="issue")
+
+    @property
+    def spatial_context(self) -> dict[str, Any]:
+        if not self.spatial_evidence:
+            return {}
+        latest = sorted(self.spatial_evidence, key=lambda item: item.created_at)[-1]
+        features = latest.geometry_features_json or {}
+        return {
+            "spatial_evidence_id": latest.id,
+            "room_graph_id": latest.room_graph_id,
+            "design_asset_id": latest.design_asset_id,
+            "field_asset_id": latest.field_asset_id,
+            "snapshot_uri": latest.snapshot_uri,
+            "spatial_note": latest.spatial_note,
+            "alignment_confidence": features.get("room_alignment_confidence", 0.0),
+            "geometry_confidence": features.get("geometry_confidence", 0.0),
+            "geometry_features": features,
+        }
 
 
 class IssueEvidence(TimestampMixin, Base):
@@ -203,6 +222,69 @@ class IssueEvidence(TimestampMixin, Base):
     label: Mapped[str] = mapped_column(String, default="")
 
     issue: Mapped[Issue] = relationship(back_populates="evidence")
+
+
+class PlanGraph(TimestampMixin, Base):
+    __tablename__ = "plan_graphs"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("pg"))
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.project_id"))
+    sheet_id: Mapped[str] = mapped_column(String, default="")
+    graph_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    scale_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    source_doc_id: Mapped[str] = mapped_column(String, default="")
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class SpatialAsset(TimestampMixin, Base):
+    __tablename__ = "spatial_assets"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("spa"))
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.project_id"))
+    type: Mapped[str] = mapped_column(String, default="design_glb")
+    uri: Mapped[str] = mapped_column(String, default="")
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+
+
+class FieldPoseFrame(TimestampMixin, Base):
+    __tablename__ = "field_pose_frames"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("fpf"))
+    media_id: Mapped[str] = mapped_column(String, default="")
+    timestamp: Mapped[float] = mapped_column(Float, default=0.0)
+    rgb_uri: Mapped[str] = mapped_column(String, default="")
+    depth_uri: Mapped[str] = mapped_column(String, default="")
+    intrinsics_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    pose_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    blur_score: Mapped[float] = mapped_column(Float, default=0.0)
+    room_hint: Mapped[str] = mapped_column(String, default="")
+
+
+class SpatialAlignment(TimestampMixin, Base):
+    __tablename__ = "spatial_alignments"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("aln"))
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.project_id"))
+    plan_graph_id: Mapped[str] = mapped_column(String, default="")
+    field_asset_id: Mapped[str] = mapped_column(String, default="")
+    transform_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    anchor_pairs_json: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    confidence: Mapped[float] = mapped_column(Float, default=0.0)
+
+
+class SpatialEvidence(TimestampMixin, Base):
+    __tablename__ = "spatial_evidence"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("spe"))
+    issue_id: Mapped[str] = mapped_column(ForeignKey("issues.issue_id"))
+    room_graph_id: Mapped[str] = mapped_column(String, default="")
+    design_asset_id: Mapped[str] = mapped_column(String, default="")
+    field_asset_id: Mapped[str] = mapped_column(String, default="")
+    geometry_features_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    snapshot_uri: Mapped[str] = mapped_column(String, default="")
+    spatial_note: Mapped[str] = mapped_column(Text, default="")
+
+    issue: Mapped[Issue] = relationship(back_populates="spatial_evidence")
 
 
 class Job(TimestampMixin, Base):

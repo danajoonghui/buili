@@ -19,20 +19,30 @@ from sqlalchemy.orm import Session
 
 from .models import (
     Document,
+    FieldPoseFrame,
     Frame,
     Issue,
     IssueEvidence,
     Job,
     ModelRun,
     Observation,
+    PlanGraph,
     PlanEntity,
     Project,
     Sheet,
     SiteMedia,
     SpecChunk,
+    SpatialAlignment,
+    SpatialAsset,
+    SpatialEvidence,
     new_id,
 )
 from .storage import object_path
+from .spatial.alignment import create_spatial_alignment
+from .spatial.compare import compare_project_spatial
+from .spatial.field_capture import create_field_asset_from_frames, ingest_field_pose_frame
+from .spatial.geometry import build_design_glb
+from .spatial.plan_parser import create_plan_graph_record
 
 
 JOB_STATES = [
@@ -41,6 +51,9 @@ JOB_STATES = [
     "indexing",
     "extracting_frames",
     "detecting",
+    "spatializing_plan",
+    "reconstructing_field",
+    "aligning_plan_field",
     "reasoning",
     "review_ready",
     "failed",
@@ -681,6 +694,9 @@ def ensure_demo_project(session: Session) -> Project:
 
 
 def run_analysis_job(job_id: str, session: Session) -> None:
+    from .database import init_db
+
+    init_db()
     job = session.get(Job, job_id)
     if not job:
         return
@@ -702,12 +718,23 @@ def run_analysis_job(job_id: str, session: Session) -> None:
                 )
             )
         )
+        session.execute(
+            delete(SpatialEvidence).where(
+                SpatialEvidence.issue_id.in_(
+                    select(Issue.issue_id).where(Issue.project_id == project.project_id)
+                )
+            )
+        )
         session.execute(delete(Issue).where(Issue.project_id == project.project_id))
+        session.execute(delete(SpatialAlignment).where(SpatialAlignment.project_id == project.project_id))
+        session.execute(delete(SpatialAsset).where(SpatialAsset.project_id == project.project_id))
+        session.execute(delete(PlanGraph).where(PlanGraph.project_id == project.project_id))
         doc_ids = select(Document.doc_id).where(Document.project_id == project.project_id)
         sheet_ids = select(Sheet.sheet_id).where(Sheet.doc_id.in_(doc_ids))
         media_ids = select(SiteMedia.media_id).where(SiteMedia.project_id == project.project_id)
         session.execute(delete(Observation).where(Observation.media_id.in_(media_ids)))
         session.execute(delete(Frame).where(Frame.media_id.in_(media_ids)))
+        session.execute(delete(FieldPoseFrame).where(FieldPoseFrame.media_id.in_(media_ids)))
         session.execute(delete(PlanEntity).where(PlanEntity.sheet_id.in_(sheet_ids)))
         session.execute(delete(SpecChunk).where(SpecChunk.doc_id.in_(doc_ids)))
         session.execute(delete(Sheet).where(Sheet.doc_id.in_(doc_ids)))
@@ -783,11 +810,93 @@ def run_analysis_job(job_id: str, session: Session) -> None:
         _event(job, "detecting", 68, "observations_created", {"observations": 5 if media else 0})
         session.commit()
 
+        _event(job, "spatializing_plan", 73, "plangraph_started", {"mode": "pymupdf_vector_text"})
+        session.commit()
+        plan_graph = create_plan_graph_record(session, project, replace_existing=True)
+        _event(
+            job,
+            "spatializing_plan",
+            78,
+            "plangraph_created",
+            {
+                "plan_graph_id": plan_graph.id,
+                "rooms": len((plan_graph.graph_json or {}).get("rooms", [])),
+                "fixtures": len((plan_graph.graph_json or {}).get("fixtures", [])),
+            },
+        )
+        session.commit()
+
+        _event(job, "reconstructing_field", 82, "design_3d_started", {"plan_graph_id": plan_graph.id})
+        session.commit()
+        design_asset_id = new_id("spa")
+        design_uri, design_metadata = build_design_glb(
+            plan_graph.graph_json or {}, project.project_id, design_asset_id
+        )
+        design_asset = SpatialAsset(
+            id=design_asset_id,
+            project_id=project.project_id,
+            type="design_glb",
+            uri=design_uri,
+            metadata_json={**design_metadata, "plan_graph_id": plan_graph.id},
+        )
+        session.add(design_asset)
+        field_asset = None
+        for item in media:
+            for idx in range(1, 3):
+                ingest_field_pose_frame(
+                    session,
+                    project.project_id,
+                    media_id=item.media_id,
+                    timestamp=float(idx * 31.6),
+                    rgb_uri=f"frame://{item.media_id}/{idx}.jpg",
+                    depth_uri="",
+                    intrinsics_json={},
+                    pose_json={},
+                    blur_score=round(0.12 + idx * 0.07, 2),
+                    room_hint=["Main Floor", "Exterior / Garage"][idx - 1],
+                )
+        field_asset = create_field_asset_from_frames(session, project.project_id)
+        _event(
+            job,
+            "reconstructing_field",
+            86,
+            "spatial_assets_created",
+            {
+                "design_asset_id": design_asset.id,
+                "field_asset_id": field_asset.id if field_asset else "",
+                "field_mode": (field_asset.metadata_json or {}).get("mode") if field_asset else "no_media",
+            },
+        )
+        session.commit()
+
+        _event(job, "aligning_plan_field", 89, "alignment_started", {"guided_anchors": "auto_seed"})
+        session.commit()
+        alignment = create_spatial_alignment(session, project.project_id, plan_graph_id=plan_graph.id)
+        _event(
+            job,
+            "aligning_plan_field",
+            91,
+            "alignment_created",
+            {
+                "alignment_id": alignment.id,
+                "confidence": alignment.confidence,
+                "requires_user_anchor": alignment.transform_json.get("requires_user_anchor", False),
+            },
+        )
+        session.commit()
+
         issues = _issue_candidates(project, session)
         for issue in issues:
             session.add(issue)
-        _event(job, "reasoning", 84, "issue_generated", {"issues": len(issues)})
+        _event(job, "reasoning", 94, "issue_generated", {"issues": len(issues)})
         session.flush()
+        _, _, spatial_evidence = compare_project_spatial(
+            session,
+            project.project_id,
+            plan_graph_id=plan_graph.id,
+            alignment_id=alignment.id,
+            update_issue_status=True,
+        )
 
         payload = {
             "project_id": project.project_id,
@@ -809,6 +918,15 @@ def run_analysis_job(job_id: str, session: Session) -> None:
                 "reasoning_engine": "deterministic evidence-chain scorer",
                 "citation_required": True,
                 "field_media_required_for_final_defect": True,
+                "plan2field_3d": {
+                    "plan_graph_id": plan_graph.id,
+                    "design_asset_id": design_asset.id,
+                    "field_asset_id": field_asset.id if field_asset else "",
+                    "alignment_id": alignment.id,
+                    "spatial_evidence_count": len(spatial_evidence),
+                    "core_geometry": "cpu_deterministic",
+                    "gpu_policy": "GPU 7 reserved for VLM/detector/teacher jobs",
+                },
             },
         )
         session.add(run)

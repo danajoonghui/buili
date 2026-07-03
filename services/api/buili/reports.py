@@ -53,6 +53,8 @@ def _evidence_refs(issue: Issue) -> str:
 def _issue_row(issue: Issue) -> dict[str, object]:
     requirement = issue.requirement or {}
     observation = issue.observation or {}
+    spatial = issue.spatial_context or {}
+    geometry = spatial.get("geometry_features") or {}
     confidence = float(issue.confidence or 0.0)
     return {
         "issue_id": issue.issue_id,
@@ -71,6 +73,11 @@ def _issue_row(issue: Issue) -> dict[str, object]:
         "rfi_question": issue.rfi_draft,
         "evidence_count": len(issue.evidence or []),
         "evidence_refs": _evidence_refs(issue),
+        "spatial_evidence_id": spatial.get("spatial_evidence_id", ""),
+        "spatial_note": spatial.get("spatial_note", ""),
+        "alignment_confidence": geometry.get("room_alignment_confidence", ""),
+        "geometry_confidence": geometry.get("geometry_confidence", ""),
+        "needs_more_evidence": geometry.get("needs_more_evidence", ""),
     }
 
 
@@ -91,6 +98,11 @@ REPORT_FIELDS = [
     "rfi_question",
     "evidence_count",
     "evidence_refs",
+    "spatial_evidence_id",
+    "spatial_note",
+    "alignment_confidence",
+    "geometry_confidence",
+    "needs_more_evidence",
 ]
 
 
@@ -230,6 +242,7 @@ def build_pdf_report(project: Project, issues: list[Issue], report_type: str) ->
     story.append(table)
     story.append(Spacer(1, 18))
     for issue in issues:
+        spatial = issue.spatial_context or {}
         story.extend(
             [
                 _paragraph(issue.title, styles["Heading3"]),
@@ -237,6 +250,11 @@ def build_pdf_report(project: Project, issues: list[Issue], report_type: str) ->
                 _paragraph(f"Observation: {issue.observation.get('text', '')}", styles["BodyText"]),
                 _paragraph(
                     f"Evidence links: {_evidence_refs(issue) or 'None linked'}", styles["BodyText"]
+                ),
+                _paragraph(
+                    f"Spatial evidence: {spatial.get('spatial_evidence_id', 'not linked')} "
+                    f"{spatial.get('spatial_note', '')}",
+                    styles["BodyText"],
                 ),
                 _paragraph(f"Recommended action: {issue.recommended_action}", styles["BodyText"]),
             ]
@@ -289,6 +307,8 @@ def build_markdown_report(project: Project, issues: list[Issue], report_type: st
                 f"- Requirement: {issue.requirement.get('text', '')}",
                 f"- Observation: {issue.observation.get('text', '')}",
                 f"- Evidence: {_evidence_refs(issue) or 'None linked'}",
+                f"- Spatial evidence: {(issue.spatial_context or {}).get('spatial_evidence_id', 'not linked')}",
+                f"- Spatial note: {(issue.spatial_context or {}).get('spatial_note', '')}",
                 f"- Recommended action: {issue.recommended_action}",
             ]
         )
@@ -307,7 +327,7 @@ def build_report(session: Session, project_id: str, report_type: str, fmt: str) 
         raise ValueError("project not found")
     issues = session.scalars(
         select(Issue)
-        .options(selectinload(Issue.evidence))
+        .options(selectinload(Issue.evidence), selectinload(Issue.spatial_evidence))
         .where(Issue.project_id == project_id)
         .order_by(Issue.confidence.desc())
     ).all()

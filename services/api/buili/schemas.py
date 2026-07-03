@@ -45,6 +45,7 @@ class UploadCompleteRequest(BaseModel):
 class AnalyzeRequest(BaseModel):
     priority: Literal["normal", "high"] = "normal"
     force: bool = False
+    spatial: bool = True
 
 
 class JobOut(BaseModel):
@@ -152,6 +153,7 @@ class IssueOut(BaseModel):
     plan_location: dict[str, Any]
     rfi_draft: str
     evidence: list[EvidenceOut] = Field(default_factory=list)
+    spatial_context: dict[str, Any] = Field(default_factory=dict)
 
     model_config = {"from_attributes": True}
 
