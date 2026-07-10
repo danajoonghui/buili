@@ -10,7 +10,16 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from ..config import get_settings
-from ..models import Document, PlanEntity, PlanGraph, Project, Sheet, SpecChunk
+from ..models import (
+    Document,
+    DocumentRevision,
+    PlanEntity,
+    PlanGraph,
+    Project,
+    Sheet,
+    SpecChunk,
+    SpatialAsset,
+)
 from ..storage import object_path
 from .floorplan_extractor import extract_floorplan_payload_from_pdf
 from .semantic_auto import build_semantic_scene_from_pdf, semantic_scene_to_plan_graph_payload
@@ -27,6 +36,62 @@ FIXTURE_TYPE_MAP = {
     "window": "window",
     "cabinet": "cabinet",
 }
+
+
+def document_spatial_provenance(session: Session, document: Document) -> dict[str, Any]:
+    revision = session.scalar(
+        select(DocumentRevision).where(DocumentRevision.document_id == document.doc_id)
+    )
+    return {
+        "source_doc_id": document.doc_id,
+        "source_hash": document.hash,
+        "source_revision": document.revision,
+        "source_issue_date": revision.issue_date if revision else "",
+        "source_revision_id": revision.revision_id if revision else "",
+        "source_revision_state": revision.state if revision else "unclassified",
+        "source_filename": document.filename,
+    }
+
+
+def plan_graph_provenance(graph: PlanGraph) -> dict[str, Any]:
+    payload = graph.graph_json or {}
+    provenance = dict(payload.get("provenance") or {})
+    provenance.setdefault("source_doc_id", graph.source_doc_id)
+    return provenance
+
+
+def plan_graph_is_current(session: Session, graph: PlanGraph) -> bool:
+    provenance = plan_graph_provenance(graph)
+    document = session.get(Document, graph.source_doc_id)
+    if not document or document.project_id != graph.project_id:
+        return False
+    revision = session.scalar(
+        select(DocumentRevision).where(
+            DocumentRevision.document_id == document.doc_id,
+            DocumentRevision.project_id == graph.project_id,
+            DocumentRevision.state == "current",
+        )
+    )
+    return bool(
+        revision
+        and provenance.get("source_doc_id") == document.doc_id
+        and provenance.get("source_hash") == document.hash
+        and provenance.get("source_revision") == document.revision
+    )
+
+
+def spatial_asset_is_current(session: Session, asset: SpatialAsset) -> bool:
+    if asset.type != "design_glb":
+        return True
+    metadata = asset.metadata_json or {}
+    graph = session.get(PlanGraph, str(metadata.get("plan_graph_id") or ""))
+    if not graph or not plan_graph_is_current(session, graph):
+        return False
+    provenance = plan_graph_provenance(graph)
+    return all(
+        metadata.get(key) == provenance.get(key)
+        for key in ("source_doc_id", "source_hash", "source_revision")
+    )
 
 
 def _slug(value: str, fallback: str) -> str:
@@ -172,14 +237,32 @@ def build_plan_graph_payload(
     calibration_px: float | None = None,
     calibration_m: float | None = None,
 ) -> dict[str, Any]:
-    doc_query = select(Document).where(Document.project_id == project.project_id)
+    current_doc_ids = list(
+        session.scalars(
+            select(DocumentRevision.document_id).where(
+                DocumentRevision.project_id == project.project_id,
+                DocumentRevision.state == "current",
+            )
+        ).all()
+    )
+    doc_query = select(Document).where(
+        Document.project_id == project.project_id,
+        Document.type == "plan",
+    )
     if source_doc_id:
+        if source_doc_id not in current_doc_ids:
+            raise ValueError("source document is not the current activated revision")
         doc_query = doc_query.where(Document.doc_id == source_doc_id)
+    else:
+        if not current_doc_ids:
+            raise ValueError("activate a current drawing revision before spatial extraction")
+        doc_query = doc_query.where(Document.doc_id.in_(current_doc_ids))
     documents = list(session.scalars(doc_query.order_by(Document.created_at.asc())).all())
     if not documents:
         raise ValueError("no parsed document is available for PlanGraph extraction")
 
-    sheet_query = select(Sheet).join(Document).where(Document.project_id == project.project_id)
+    document_ids = [document.doc_id for document in documents]
+    sheet_query = select(Sheet).where(Sheet.doc_id.in_(document_ids))
     if preferred_sheet_id:
         sheet_query = sheet_query.where(
             (Sheet.sheet_id == preferred_sheet_id) | (Sheet.sheet_number == preferred_sheet_id)
@@ -196,17 +279,17 @@ def build_plan_graph_payload(
             select(PlanEntity).where(PlanEntity.sheet_id == selected_sheet.sheet_id)
         ).all()
     )
-    chunks = list(
-        session.scalars(
-            select(SpecChunk)
-            .join(Document)
-            .where(Document.project_id == project.project_id)
-            .order_by(SpecChunk.page.asc())
-        ).all()
-    )
     source_doc = next(
         (doc for doc in documents if doc.doc_id == selected_sheet.doc_id), documents[0]
     )
+    chunks = list(
+        session.scalars(
+            select(SpecChunk)
+            .where(SpecChunk.doc_id == source_doc.doc_id)
+            .order_by(SpecChunk.page.asc())
+        ).all()
+    )
+    provenance = document_spatial_provenance(session, source_doc)
     scale = _parse_scale(chunks, calibration_px, calibration_m)
     source_path = object_path(source_doc.r2_key)
 
@@ -234,6 +317,8 @@ def build_plan_graph_payload(
                     source_filename=source_doc.filename,
                 )
                 payload["extraction"]["scene_build"] = scene_metadata
+                payload["extraction"].update(provenance)
+                payload["provenance"] = provenance
                 for chunk in chunks[:12]:
                     payload["sources"].append(
                         {
@@ -264,6 +349,8 @@ def build_plan_graph_payload(
         )
         if extracted_payload and len(extracted_payload.get("walls", [])) >= 6:
             extracted_payload["extraction"]["automatic_semantic_error"] = auto_semantic_error
+            extracted_payload["extraction"].update(provenance)
+            extracted_payload["provenance"] = provenance
             for chunk in chunks[:12]:
                 extracted_payload["sources"].append(
                     {
@@ -370,6 +457,7 @@ def build_plan_graph_payload(
         "openings": openings,
         "fixtures": fixtures,
         "sources": sources,
+        "provenance": provenance,
         "extraction": {
             "method": "pymupdf_vector_text_plus_existing_plan_entities",
             "source_doc_id": source_doc.doc_id,
@@ -379,6 +467,7 @@ def build_plan_graph_payload(
             "pdf_vector_seed": _pdf_vector_seed(source_doc),
             "automatic_semantic_error": auto_semantic_error,
             "source_required_for_strong_evidence": True,
+            **provenance,
         },
     }
 
@@ -401,6 +490,11 @@ def create_plan_graph_record(
         calibration_px=calibration_px,
         calibration_m=calibration_m,
     )
+    previous_version = session.scalar(
+        select(PlanGraph.version)
+        .where(PlanGraph.project_id == project.project_id)
+        .order_by(PlanGraph.version.desc())
+    ) or 0
     if replace_existing:
         session.execute(delete(PlanGraph).where(PlanGraph.project_id == project.project_id))
         session.flush()
@@ -410,7 +504,7 @@ def create_plan_graph_record(
         graph_json=payload,
         scale_json=payload["scale"],
         source_doc_id=payload["extraction"].get("source_doc_id", ""),
-        version=1,
+        version=previous_version + 1,
     )
     session.add(record)
     session.flush()

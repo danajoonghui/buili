@@ -64,6 +64,7 @@ class PlanGraphPayload(BaseModel):
     fixtures: list[PlanGraphFixture] = Field(default_factory=list)
     sources: list[SpatialSourceRef] = Field(default_factory=list)
     extraction: dict[str, Any] = Field(default_factory=dict)
+    provenance: dict[str, Any] = Field(default_factory=dict)
 
 
 class PlanGraphCreateRequest(BaseModel):

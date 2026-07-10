@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buili — Construction Verification Intelligence</title>
+  <style>
+    :root {
+      --bg: #f6f8f7;
+      --surface: #ffffff;
+      --surface-soft: #f1f5f3;
+      --line: #dfe7e2;
+      --line-strong: #cad7cf;
+      --text: #17211b;
+      --muted: #6e7c74;
+      --muted-2: #8f9b94;
+      --green: #19734d;
+      --green-2: #0f5f3d;
+      --green-soft: #e7f2ec;
+      --amber: #a66b0b;
+      --amber-soft: #fff5df;
+      --red: #a53d3d;
+      --red-soft: #fbeaea;
+      --blue: #356d95;
+      --blue-soft: #e9f1f7;
+      --radius: 10px;
+      --shadow: 0 1px 2px rgba(20, 45, 30, .05), 0 10px 30px rgba(20, 45, 30, .05);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 232px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      background: #fbfcfb;
+      border-right: 1px solid var(--line);
+      padding: 18px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 2px 8px 12px;
+    }
+
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      background: var(--green);
+      display: grid;
+      place-items: center;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.3);
+    }
+
+    .brand-mark svg { width: 20px; height: 20px; }
+    .brand-title { font-weight: 760; letter-spacing: -.02em; font-size: 18px; }
+    .brand-sub { color: var(--muted); font-size: 11px; margin-top: 2px; }
+
+    .project-switcher {
+      margin: 0 4px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: var(--surface);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .project-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: #dfece5;
+      color: var(--green-2);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 12px;
+    }
+
+    .project-name { font-size: 13px; font-weight: 680; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .project-meta { color: var(--muted); font-size: 11px; margin-top: 3px; }
+
+    .nav-section-title {
+      padding: 0 10px;
+      color: var(--muted-2);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .nav {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .nav button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 10px 11px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: #415047;
+      text-align: left;
+      font-weight: 620;
+      font-size: 13px;
+    }
+
+    .nav button:hover { background: #eef3f0; }
+    .nav button.active { background: var(--green-soft); color: var(--green-2); }
+    .nav button svg { width: 18px; height: 18px; stroke-width: 1.8; }
+
+    .sidebar-bottom {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .sidebar-bottom button {
+      border: 0;
+      background: transparent;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 9px 11px;
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .sidebar-bottom button:hover { background: #eef3f0; color: var(--text); }
+
+    .main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      height: 64px;
+      background: rgba(255,255,255,.94);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+    }
+
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .breadcrumbs strong { color: var(--text); font-weight: 700; }
+
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+    .search {
+      width: 250px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfb;
+      color: var(--muted);
+    }
+    .search input { width: 100%; border: 0; outline: none; background: transparent; color: var(--text); font-size: 13px; }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+    }
+
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #233a2d;
+      color: white;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .page {
+      padding: 24px 28px 40px;
+      min-width: 0;
+    }
+
+    .page-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: 28px; letter-spacing: -.03em; line-height: 1.2; }
+    h2 { font-size: 18px; letter-spacing: -.02em; }
+    h3 { font-size: 14px; }
+    .subtitle { margin-top: 7px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+
+    .primary-btn, .secondary-btn, .ghost-btn {
+      border-radius: 8px;
+      padding: 9px 13px;
+      font-weight: 700;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .primary-btn { border: 1px solid var(--green); background: var(--green); color: white; }
+    .primary-btn:hover { background: var(--green-2); }
+    .secondary-btn { border: 1px solid var(--line-strong); background: white; color: var(--text); }
+    .secondary-btn:hover { background: var(--surface-soft); }
+    .ghost-btn { border: 0; background: transparent; color: var(--green); }
+
+    .metrics-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 24px;
+      background: rgba(255,255,255,.42);
+    }
+
+    .metric {
+      padding: 18px 20px;
+      position: relative;
+    }
+    .metric + .metric::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 15px;
+      bottom: 15px;
+      width: 1px;
+      background: var(--line);
+    }
+    .metric-label { color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; }
+    .metric-value { margin-top: 6px; font-size: 26px; font-weight: 760; letter-spacing: -.03em; }
+    .metric-foot { margin-top: 3px; font-size: 11px; color: var(--muted); }
+    .metric-foot.good { color: var(--green); }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(320px, .8fr);
+      gap: 22px;
+      align-items: start;
+    }
+
+    .section {
+      background: transparent;
+      min-width: 0;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .text-link { border: 0; background: transparent; color: var(--green); font-weight: 700; font-size: 12px; }
+
+    .table-wrap {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(20,45,30,.03);
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th {
+      text-align: left;
+      padding: 11px 14px;
+      background: #fafcfb;
+      color: var(--muted);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      border-bottom: 1px solid var(--line);
+    }
+    td { padding: 13px 14px; border-bottom: 1px solid #edf1ef; vertical-align: middle; }
+    tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: #fbfdfc; }
+    .issue-title { font-weight: 700; color: var(--text); }
+    .issue-sub { color: var(--muted); font-size: 11px; margin-top: 3px; }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .status.open { color: var(--green-2); background: var(--green-soft); }
+    .status.review { color: var(--amber); background: var(--amber-soft); }
+    .status.blocked { color: var(--red); background: var(--red-soft); }
+    .status.closed { color: #66716b; background: #edf0ee; }
+
+    .priority { font-weight: 700; }
+    .priority.high { color: var(--red); }
+    .priority.medium { color: var(--amber); }
+    .priority.low { color: var(--muted); }
+
+    .activity {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 4px 16px;
+    }
+
+    .activity-item {
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      gap: 10px;
+      padding: 13px 0;
+      border-bottom: 1px solid #edf1ef;
+    }
+    .activity-item:last-child { border-bottom: 0; }
+    .activity-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--green-soft);
+      color: var(--green-2);
+      display: grid;
+      place-items: center;
+    }
+    .activity-title { font-size: 12px; line-height: 1.45; }
+    .activity-time { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+    .progress-list {
+      margin-top: 22px;
+      border-top: 1px solid var(--line);
+    }
+    .progress-row {
+      display: grid;
+      grid-template-columns: 110px minmax(0, 1fr) 44px;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 12px;
+    }
+    .progress-label { font-weight: 650; }
+    .bar { height: 7px; background: #e8eeea; border-radius: 999px; overflow: hidden; }
+    .bar > span { display: block; height: 100%; background: var(--green); border-radius: inherit; }
+    .progress-value { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+    /* Drawings */
+    .workspace {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr) 300px;
+      min-height: calc(100vh - 64px - 48px);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: white;
+      overflow: hidden;
+    }
+
+    .sheet-panel, .inspect-panel { background: #fbfcfb; }
+    .sheet-panel { border-right: 1px solid var(--line); }
+    .inspect-panel { border-left: 1px solid var(--line); }
+    .panel-head { padding: 15px 16px; border-bottom: 1px solid var(--line); }
+    .panel-head h3 { font-size: 13px; }
+    .panel-head p { margin-top: 4px; color: var(--muted); font-size: 10px; }
+
+    .sheet-list { padding: 8px; }
+    .sheet-item {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 10px;
+      padding: 9px;
+      border-radius: 8px;
+      cursor: pointer;
+      align-items: center;
+    }
+    .sheet-item:hover { background: #f0f4f2; }
+    .sheet-item.active { background: var(--green-soft); }
+    .thumb {
+      height: 44px;
+      border: 1px solid var(--line-strong);
+      border-radius: 5px;
+      background:
+        linear-gradient(90deg, transparent 47%, #dce5df 48% 52%, transparent 53%),
+        linear-gradient(0deg, transparent 47%, #dce5df 48% 52%, transparent 53%),
+        white;
+    }
+    .sheet-name { font-size: 11px; font-weight: 700; }
+    .sheet-meta { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+    .canvas-wrap { min-width: 0; display: flex; flex-direction: column; background: #eef2f0; }
+    .canvas-toolbar {
+      height: 52px;
+      padding: 0 12px;
+      background: white;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .segmented { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+    .segmented button { border: 0; border-right: 1px solid var(--line); background: white; padding: 7px 12px; font-size: 11px; font-weight: 700; color: var(--muted); }
+    .segmented button:last-child { border-right: 0; }
+    .segmented button.active { background: var(--green-soft); color: var(--green-2); }
+    .toolset { display: flex; gap: 6px; }
+    .toolset button { width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 7px; background: white; color: var(--muted); display: grid; place-items: center; }
+    .toolset button:hover { background: var(--surface-soft); }
+
+    .canvas {
+      position: relative;
+      flex: 1;
+      min-height: 560px;
+      display: grid;
+      place-items: center;
+      padding: 26px;
+      overflow: hidden;
+      background-image: radial-gradient(#ced8d2 1px, transparent 1px);
+      background-size: 18px 18px;
+    }
+
+    .plan {
+      width: min(880px, 90%);
+      max-height: 75vh;
+      background: white;
+      border: 1px solid #cfd9d3;
+      box-shadow: var(--shadow);
+    }
+
+    .issue-pin {
+      cursor: pointer;
+      transform-origin: center;
+      transition: transform .15s ease;
+    }
+    .issue-pin:hover { transform: scale(1.12); }
+
+    .canvas-hint {
+      position: absolute;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,.95);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 10px;
+      color: var(--muted);
+      box-shadow: 0 4px 14px rgba(20,45,30,.07);
+    }
+
+    .inspect-scroll { padding: 16px; overflow: auto; height: calc(100% - 58px); }
+    .issue-code { font-size: 10px; color: var(--green); font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    .issue-heading { font-size: 17px; line-height: 1.35; margin-top: 7px; letter-spacing: -.02em; }
+    .meta-list { margin-top: 16px; border-top: 1px solid var(--line); }
+    .meta-row { display: grid; grid-template-columns: 92px 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 11px; }
+    .meta-key { color: var(--muted); }
+    .meta-val { font-weight: 650; }
+
+    .inspector-section { margin-top: 18px; }
+    .inspector-section h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 8px; }
+    .source-block { border-left: 3px solid var(--green); padding-left: 11px; font-size: 11px; line-height: 1.55; }
+    .source-ref { margin-top: 6px; color: var(--green); font-weight: 700; font-size: 10px; }
+    .evidence-thumb { height: 128px; border-radius: 8px; overflow: hidden; position: relative; background: linear-gradient(140deg, #b9c4bd, #6f7f75); }
+    .evidence-thumb::before, .evidence-thumb::after { content: ""; position: absolute; background: rgba(255,255,255,.28); }
+    .evidence-thumb::before { left: 24px; right: 24px; top: 54px; height: 9px; transform: rotate(-4deg); }
+    .evidence-thumb::after { width: 12px; top: 16px; bottom: 16px; left: 70%; transform: rotate(3deg); }
+    .evidence-label { position: absolute; left: 9px; bottom: 8px; background: rgba(255,255,255,.9); border-radius: 5px; padding: 5px 7px; font-size: 9px; color: var(--text); }
+
+    .notice {
+      margin-top: 14px;
+      padding: 11px 12px;
+      border-radius: 8px;
+      background: var(--amber-soft);
+      color: #75500e;
+      font-size: 11px;
+      line-height: 1.45;
+      border: 1px solid #edd8ac;
+    }
+
+    /* Evidence */
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .filter {
+      border: 1px solid var(--line);
+      background: white;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 11px;
+      color: var(--text);
+    }
+    .evidence-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .media-card { background: white; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+    .media-image { height: 150px; position: relative; overflow: hidden; }
+    .media-image.one { background: linear-gradient(135deg, #d9dfdb 0 30%, #87958d 31% 64%, #c4cec8 65%); }
+    .media-image.two { background: linear-gradient(160deg, #afbbb4 0 40%, #6c7e73 41% 60%, #d2d9d5 61%); }
+    .media-image.three { background: linear-gradient(120deg, #d4dbd7 0 28%, #8b9990 29% 70%, #b4c0b8 71%); }
+    .media-image.four { background: linear-gradient(145deg, #c8d1cc 0 34%, #798a80 35% 68%, #d8dedb 69%); }
+    .media-image::before { content: ""; position: absolute; width: 130%; height: 8px; background: rgba(255,255,255,.35); top: 65px; left: -12px; transform: rotate(-6deg); }
+    .media-body { padding: 11px 12px 12px; }
+    .media-title { font-size: 12px; font-weight: 700; }
+    .media-meta { margin-top: 5px; font-size: 10px; color: var(--muted); }
+    .media-tags { margin-top: 8px; display: flex; gap: 5px; flex-wrap: wrap; }
+    .tag { font-size: 9px; padding: 4px 6px; border-radius: 999px; background: #eef3f0; color: #536057; }
+
+    /* Reports */
+    .report-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; }
+    .report-list { background: white; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+    .report-item { padding: 14px 15px; border-bottom: 1px solid var(--line); cursor: pointer; }
+    .report-item:last-child { border-bottom: 0; }
+    .report-item:hover { background: #fbfdfc; }
+    .report-item.active { background: var(--green-soft); }
+    .report-name { font-weight: 700; font-size: 12px; }
+    .report-meta { margin-top: 4px; color: var(--muted); font-size: 10px; }
+    .report-preview { background: white; border: 1px solid var(--line); border-radius: 10px; padding: 34px 42px; min-height: 720px; box-shadow: var(--shadow); }
+    .doc-title { font-size: 22px; letter-spacing: -.03em; }
+    .doc-rule { height: 3px; width: 54px; background: var(--green); margin: 18px 0 26px; }
+    .doc-grid { display: grid; grid-template-columns: 160px 1fr; gap: 10px 18px; font-size: 11px; margin-bottom: 26px; }
+    .doc-key { color: var(--muted); }
+    .doc-val { font-weight: 650; }
+    .doc-section { margin-top: 24px; }
+    .doc-section h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+    .doc-section p { font-size: 11px; line-height: 1.75; color: #3d4a42; }
+    .doc-quote { margin-top: 9px; padding: 12px 14px; border-left: 3px solid var(--green); background: #f6faf7; font-size: 11px; line-height: 1.7; }
+
+    /* Issues page */
+    .issue-toolbar { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .issue-toolbar-left { display: flex; gap: 8px; flex-wrap: wrap; }
+    .mini-search { display: flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: white; border-radius: 8px; padding: 8px 10px; width: 230px; }
+    .mini-search input { border: 0; outline: none; width: 100%; background: transparent; font-size: 11px; }
+
+    /* modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(22, 33, 27, .28);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 20px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      width: min(680px, 100%);
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 24px 70px rgba(20,45,30,.22);
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+    .modal-head { padding: 18px 20px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+    .modal-head h2 { font-size: 17px; }
+    .modal-body { padding: 20px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { font-size: 10px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .field input, .field select, .field textarea { border: 1px solid var(--line-strong); border-radius: 8px; padding: 10px 11px; outline: none; background: white; color: var(--text); font-size: 12px; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(25,115,77,.10); }
+    .field textarea { min-height: 92px; resize: vertical; }
+    .upload-zone { border: 1px dashed #aebdb4; border-radius: 9px; padding: 18px; text-align: center; color: var(--muted); background: #fbfcfb; font-size: 11px; }
+    .modal-foot { padding: 14px 20px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 8px; }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 1180px) {
+      .content-grid { grid-template-columns: 1fr; }
+      .workspace { grid-template-columns: 190px minmax(0,1fr); }
+      .inspect-panel { display: none; }
+      .evidence-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 74px minmax(0, 1fr); }
+      .sidebar { padding: 16px 9px; }
+      .brand-copy, .project-switcher > div:not(.project-badge), .nav button span, .nav-section-title, .sidebar-bottom span { display: none; }
+      .brand { justify-content: center; padding-left: 0; padding-right: 0; }
+      .project-switcher { justify-content: center; padding: 8px; }
+      .nav button { justify-content: center; padding: 10px; }
+      .topbar { padding: 0 16px; }
+      .search { width: 180px; }
+      .page { padding: 20px 18px 34px; }
+      .metrics-strip { grid-template-columns: repeat(2, 1fr); }
+      .metric:nth-child(3)::before { display: none; }
+      .workspace { grid-template-columns: 1fr; }
+      .sheet-panel { display: none; }
+      .report-layout { grid-template-columns: 1fr; }
+      .report-list { display: flex; overflow: auto; }
+      .report-item { min-width: 220px; border-bottom: 0; border-right: 1px solid var(--line); }
+      .evidence-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 620px) {
+      .top-actions .search { display: none; }
+      .page-head { flex-direction: column; }
+      .metrics-strip { grid-template-columns: 1fr; }
+      .metric + .metric::before { left: 18px; right: 18px; top: 0; bottom: auto; width: auto; height: 1px; }
+      .metric:nth-child(3)::before { display: block; }
+      .evidence-grid { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .report-preview { padding: 24px; }
+      .doc-grid { grid-template-columns: 110px 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M5 17.5V7.2L12 3l7 4.2v10.3L12 21l-7-3.5Z" stroke="white" stroke-width="1.8"/>
+            <path d="M8 15.5V9.2l4-2.3 4 2.3v6.3L12 18l-4-2.5Z" stroke="white" stroke-width="1.8"/>
+          </svg>
+        </div>
+        <div class="brand-copy">
+          <div class="brand-title">Buili</div>
+          <div class="brand-sub">Construction Verification</div>
+        </div>
+      </div>
+
+      <div class="project-switcher">
+        <div class="project-badge">PO</div>
+        <div style="min-width:0; flex:1">
+          <div class="project-name">Pioneer Office Renovation</div>
+          <div class="project-meta">San Jose, CA · Active</div>
+        </div>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m7 10 5 5 5-5"/></svg>
+      </div>
+
+      <div class="nav-section-title">Workspace</div>
+      <nav class="nav">
+        <button class="active" data-view="overview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 13h6V4H4v9Zm10 7h6V11h-6v9ZM4 20h6v-3H4v3Zm10-13h6V4h-6v3Z"/></svg>
+          <span>Overview</span>
+        </button>
+        <button data-view="drawings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19.5V5l8-3 8 3v14.5L12 22l-8-2.5Z"/><path d="M12 2v20M4 5l8 3 8-3"/></svg>
+          <span>Drawings & 3D</span>
+        </button>
+        <button data-view="evidence">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="m21 15-5-5L5 19"/></svg>
+          <span>Field Evidence</span>
+        </button>
+        <button data-view="issues">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 3h6l1 2h4v16H4V5h4l1-2Z"/><path d="M8 11h8M8 15h5"/></svg>
+          <span>Issues</span>
+        </button>
+        <button data-view="reports">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2h9l3 3v17H6V2Z"/><path d="M14 2v5h5M9 12h6M9 16h6"/></svg>
+          <span>Reports</span>
+        </button>
+      </nav>
+
+      <div class="nav-section-title">Project</div>
+      <nav class="nav">
+        <button>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 21V3h16v18M8 21v-4h8v4M8 7h2M14 7h2M8 11h2M14 11h2"/></svg>
+          <span>Directory</span>
+        </button>
+        <button>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.1A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.1A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 .6 1 1.7 1.7 0 0 0 1.1.4h.1v4h-.1A1.7 1.7 0 0 0 19.4 15Z"/></svg>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <button><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M9.7 9a2.3 2.3 0 1 1 3.9 1.7c-.8.7-1.6 1.1-1.6 2.3M12 17h.01"/></svg><span>Help center</span></button>
+        <button><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span>Notifications</span></button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="breadcrumbs">
+          <span>Projects</span>
+          <span>/</span>
+          <strong id="crumbTitle">Overview</strong>
+        </div>
+        <div class="top-actions">
+          <label class="search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>
+            <input placeholder="Search drawings, RFIs, issues" />
+          </label>
+          <button class="icon-btn" aria-label="Help"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M9.7 9a2.3 2.3 0 1 1 3.9 1.7c-.8.7-1.6 1.1-1.6 2.3M12 17h.01"/></svg></button>
+          <button class="icon-btn" aria-label="Notifications"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></button>
+          <div class="avatar">JC</div>
+        </div>
+      </header>
+
+      <!-- Overview -->
+      <section class="page view" id="view-overview">
+        <div class="page-head">
+          <div>
+            <h1>Pioneer Office Renovation</h1>
+            <p class="subtitle">Drawing-grounded site verification for a 24,800 sq ft tenant improvement project.</p>
+          </div>
+          <div style="display:flex; gap:8px">
+            <button class="secondary-btn" id="uploadBtn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>
+              Upload evidence
+            </button>
+            <button class="primary-btn" id="newIssueBtn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>
+              New issue
+            </button>
+          </div>
+        </div>
+
+        <div class="metrics-strip">
+          <div class="metric"><div class="metric-label">Open issues</div><div class="metric-value">24</div><div class="metric-foot">7 awaiting review</div></div>
+          <div class="metric"><div class="metric-label">Evidence coverage</div><div class="metric-value">86%</div><div class="metric-foot good">+9% this week</div></div>
+          <div class="metric"><div class="metric-label">Draft time</div><div class="metric-value">4m 18s</div><div class="metric-foot good">72% faster than baseline</div></div>
+          <div class="metric"><div class="metric-label">Drawing alignment</div><div class="metric-value">97.6%</div><div class="metric-foot">12 sheets verified</div></div>
+        </div>
+
+        <div class="content-grid">
+          <section class="section">
+            <div class="section-header"><h2>Priority issues</h2><button class="text-link" data-jump="issues">View all issues</button></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Issue</th><th>Location</th><th>Type</th><th>Status</th><th>Priority</th></tr></thead>
+                <tbody>
+                  <tr data-open-issue="BUI-1042"><td><div class="issue-title">HVAC duct conflicts with sprinkler line</div><div class="issue-sub">BUI-1042 · Updated 18 min ago</div></td><td>Level 2 · Room 204</td><td>RFI candidate</td><td><span class="status review">Review</span></td><td><span class="priority high">High</span></td></tr>
+                  <tr><td><div class="issue-title">Partition offset from A-202 layout</div><div class="issue-sub">BUI-1038 · Updated 1 hr ago</div></td><td>Level 1 · West corridor</td><td>Punch</td><td><span class="status open">Open</span></td><td><span class="priority medium">Medium</span></td></tr>
+                  <tr><td><div class="issue-title">Door hardware submittal mismatch</div><div class="issue-sub">BUI-1033 · Updated yesterday</div></td><td>Level 3 · Room 311</td><td>RFI candidate</td><td><span class="status blocked">Blocked</span></td><td><span class="priority high">High</span></td></tr>
+                  <tr><td><div class="issue-title">Ceiling tile damage after MEP work</div><div class="issue-sub">BUI-1027 · Updated yesterday</div></td><td>Level 2 · Open office</td><td>Punch</td><td><span class="status open">Open</span></td><td><span class="priority low">Low</span></td></tr>
+                  <tr><td><div class="issue-title">Electrical room clearance incomplete</div><div class="issue-sub">BUI-1014 · Updated 2 days ago</div></td><td>Level 1 · E-101</td><td>Observation</td><td><span class="status closed">Closed</span></td><td><span class="priority medium">Medium</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="section-header" style="margin-top:24px"><h2>Verification progress</h2><button class="text-link">Open model</button></div>
+            <div class="progress-list">
+              <div class="progress-row"><div class="progress-label">Architectural</div><div class="bar"><span style="width:92%"></span></div><div class="progress-value">92%</div></div>
+              <div class="progress-row"><div class="progress-label">Mechanical</div><div class="bar"><span style="width:77%"></span></div><div class="progress-value">77%</div></div>
+              <div class="progress-row"><div class="progress-label">Electrical</div><div class="bar"><span style="width:69%"></span></div><div class="progress-value">69%</div></div>
+              <div class="progress-row"><div class="progress-label">Fire protection</div><div class="bar"><span style="width:81%"></span></div><div class="progress-value">81%</div></div>
+            </div>
+          </section>
+
+          <aside class="section">
+            <div class="section-header"><h2>Recent activity</h2><button class="text-link">View log</button></div>
+            <div class="activity">
+              <div class="activity-item"><div class="activity-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v18M3 12h18"/></svg></div><div><div class="activity-title"><strong>Maya Chen</strong> added 6 field photos to Room 204.</div><div class="activity-time">18 minutes ago</div></div></div>
+              <div class="activity-item"><div class="activity-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h16v13H7l-3 3V4Z"/></svg></div><div><div class="activity-title"><strong>Buili AI</strong> generated an RFI draft for BUI-1042 with 5 source references.</div><div class="activity-time">22 minutes ago</div></div></div>
+              <div class="activity-item"><div class="activity-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2h9l3 3v17H6V2Z"/><path d="M14 2v5h5"/></svg></div><div><div class="activity-title"><strong>Daniel Ruiz</strong> approved drawing revision A-202 Rev 5.</div><div class="activity-time">1 hour ago</div></div></div>
+              <div class="activity-item"><div class="activity-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 12 4 4L19 6"/></svg></div><div><div class="activity-title">Issue BUI-1014 was closed after field re-verification.</div><div class="activity-time">2 hours ago</div></div></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- Drawings -->
+      <section class="page view hidden" id="view-drawings">
+        <div class="page-head">
+          <div>
+            <h1>Drawings & 3D</h1>
+            <p class="subtitle">Compare plan requirements, spatial context, and field evidence in one view.</p>
+          </div>
+          <div style="display:flex; gap:8px"><button class="secondary-btn">Upload revision</button><button class="primary-btn">Add issue pin</button></div>
+        </div>
+
+        <div class="workspace">
+          <aside class="sheet-panel">
+            <div class="panel-head"><h3>Drawing set</h3><p>12 sheets · Current revision</p></div>
+            <div class="sheet-list">
+              <div class="sheet-item active"><div class="thumb"></div><div><div class="sheet-name">A-202</div><div class="sheet-meta">Level 2 plan · Rev 5</div></div></div>
+              <div class="sheet-item"><div class="thumb"></div><div><div class="sheet-name">M-202</div><div class="sheet-meta">HVAC plan · Rev 3</div></div></div>
+              <div class="sheet-item"><div class="thumb"></div><div><div class="sheet-name">FP-202</div><div class="sheet-meta">Fire protection · Rev 2</div></div></div>
+              <div class="sheet-item"><div class="thumb"></div><div><div class="sheet-name">E-202</div><div class="sheet-meta">Power plan · Rev 4</div></div></div>
+              <div class="sheet-item"><div class="thumb"></div><div><div class="sheet-name">A-601</div><div class="sheet-meta">Door schedule · Rev 1</div></div></div>
+            </div>
+          </aside>
+
+          <div class="canvas-wrap">
+            <div class="canvas-toolbar">
+              <div class="segmented" id="viewMode"><button class="active" data-mode="plan">2D plan</button><button data-mode="model">3D context</button><button data-mode="overlay">Evidence</button></div>
+              <div class="toolset">
+                <button title="Select"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 3 14 9-7 2-2 7L5 3Z"/></svg></button>
+                <button title="Pan"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 11V6a2 2 0 1 1 4 0v5M12 10V5a2 2 0 1 1 4 0v6M16 11V8a2 2 0 1 1 4 0v7c0 4-3 7-7 7h-1c-3 0-5-1-7-4l-2-3a2 2 0 0 1 3-3l2 2"/></svg></button>
+                <button title="Zoom"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="10" cy="10" r="6"/><path d="m14.5 14.5 5 5M10 7v6M7 10h6"/></svg></button>
+                <button title="Fit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg></button>
+              </div>
+            </div>
+            <div class="canvas">
+              <svg class="plan" id="planSvg" viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg" aria-label="Simplified construction floor plan">
+                <rect x="0" y="0" width="900" height="560" fill="#fff"/>
+                <g stroke="#7f8b84" stroke-width="7" fill="none" stroke-linecap="square">
+                  <path d="M70 70H830V490H70Z"/>
+                  <path d="M70 220H340V70M340 220V490M520 70V490M690 70V490"/>
+                  <path d="M340 330H520M520 250H690M690 320H830"/>
+                </g>
+                <g stroke="#b7c2bc" stroke-width="2" fill="none">
+                  <path d="M85 205h42M162 205h45M242 205h52"/>
+                  <path d="M355 315h58M444 315h43"/>
+                  <path d="M536 235h54M618 235h45"/>
+                </g>
+                <g fill="#eef3f0">
+                  <rect x="84" y="84" width="238" height="116"/>
+                  <rect x="84" y="236" width="238" height="236"/>
+                  <rect x="358" y="84" width="144" height="226"/>
+                  <rect x="358" y="348" width="144" height="124"/>
+                  <rect x="538" y="84" width="134" height="148"/>
+                  <rect x="538" y="268" width="134" height="204"/>
+                  <rect x="708" y="84" width="104" height="218"/>
+                  <rect x="708" y="338" width="104" height="134"/>
+                </g>
+                <g font-family="Inter, Arial" fill="#7a877f" font-size="14" text-anchor="middle">
+                  <text x="203" y="142">OPEN OFFICE</text><text x="203" y="158" font-size="11">201</text>
+                  <text x="203" y="355">CONFERENCE</text><text x="203" y="371" font-size="11">204</text>
+                  <text x="430" y="187">BREAK ROOM</text><text x="430" y="203" font-size="11">206</text>
+                  <text x="430" y="414">STORAGE</text><text x="430" y="430" font-size="11">207</text>
+                  <text x="605" y="156">HUDDLE</text><text x="605" y="172" font-size="11">208</text>
+                  <text x="605" y="372">OPEN OFFICE</text><text x="605" y="388" font-size="11">209</text>
+                  <text x="760" y="188">OFFICE</text><text x="760" y="204" font-size="11">210</text>
+                  <text x="760" y="406">ELEC</text><text x="760" y="422" font-size="11">E-202</text>
+                </g>
+                <g class="issue-pin" data-pin="BUI-1042" transform="translate(248 320)">
+                  <circle r="17" fill="#19734d" stroke="#fff" stroke-width="4"/>
+                  <path d="M-5 0h10M0-5v10" stroke="#fff" stroke-width="2.2"/>
+                </g>
+                <g class="issue-pin" data-pin="BUI-1038" transform="translate(342 174)">
+                  <circle r="14" fill="#a66b0b" stroke="#fff" stroke-width="4"/>
+                  <path d="M0-5v6M0 5h.01" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>
+                </g>
+                <g class="issue-pin" data-pin="BUI-1033" transform="translate(708 248)">
+                  <circle r="14" fill="#a53d3d" stroke="#fff" stroke-width="4"/>
+                  <path d="M-4-4l8 8M4-4l-8 8" stroke="#fff" stroke-width="2.2"/>
+                </g>
+              </svg>
+              <div class="canvas-hint">Click an issue pin to inspect drawing references and field evidence.</div>
+            </div>
+          </div>
+
+          <aside class="inspect-panel">
+            <div class="panel-head"><h3>Issue inspector</h3><p>Drawing-grounded verification</p></div>
+            <div class="inspect-scroll">
+              <div class="issue-code">BUI-1042 · RFI candidate</div>
+              <h2 class="issue-heading">HVAC duct conflicts with sprinkler line</h2>
+              <div style="margin-top:10px"><span class="status review">Awaiting review</span></div>
+
+              <div class="meta-list">
+                <div class="meta-row"><div class="meta-key">Location</div><div class="meta-val">Level 2 · Room 204</div></div>
+                <div class="meta-row"><div class="meta-key">Drawing</div><div class="meta-val">M-202 Rev 3 / FP-202 Rev 2</div></div>
+                <div class="meta-row"><div class="meta-key">Confidence</div><div class="meta-val">High · 0.91</div></div>
+                <div class="meta-row"><div class="meta-key">Assigned to</div><div class="meta-val">Maya Chen</div></div>
+              </div>
+
+              <div class="inspector-section">
+                <h3>Observed condition</h3>
+                <div class="source-block">Field photo and voice note indicate the sprinkler main crosses the planned duct route near Grid C-4.</div>
+              </div>
+
+              <div class="inspector-section">
+                <h3>Plan requirement</h3>
+                <div class="source-block">M-202 shows a continuous 24×14 supply duct through Room 204 with no elevation change at this location.<div class="source-ref">M-202 · Detail 3 · Rev 3</div></div>
+              </div>
+
+              <div class="inspector-section">
+                <h3>Field evidence</h3>
+                <div class="evidence-thumb"><div class="evidence-label">IMG_2048 · 9:42 AM</div></div>
+              </div>
+
+              <div class="notice"><strong>Additional evidence required.</strong><br/>Capture one wide-angle photo and one measurement showing vertical clearance between the duct path and sprinkler main.</div>
+
+              <div style="display:flex; gap:8px; margin-top:16px"><button class="secondary-btn" style="flex:1; justify-content:center">Reject</button><button class="primary-btn" style="flex:1; justify-content:center">Approve draft</button></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- Evidence -->
+      <section class="page view hidden" id="view-evidence">
+        <div class="page-head">
+          <div><h1>Field Evidence</h1><p class="subtitle">Photos, videos, voice notes, and measurements linked to exact project locations.</p></div>
+          <button class="primary-btn" id="uploadBtn2"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>Upload evidence</button>
+        </div>
+
+        <div class="filter-row">
+          <select class="filter"><option>All floors</option><option>Level 1</option><option>Level 2</option><option>Level 3</option></select>
+          <select class="filter"><option>All evidence types</option><option>Photo</option><option>Video</option><option>Voice note</option><option>Measurement</option></select>
+          <select class="filter"><option>Any link status</option><option>Linked to issue</option><option>Unlinked</option></select>
+          <button class="secondary-btn" style="margin-left:auto">Sort: Newest</button>
+        </div>
+
+        <div class="evidence-grid">
+          <article class="media-card"><div class="media-image one"></div><div class="media-body"><div class="media-title">Room 204 ceiling conflict</div><div class="media-meta">Level 2 · 18 min ago · Maya Chen</div><div class="media-tags"><span class="tag">BUI-1042</span><span class="tag">HVAC</span><span class="tag">Photo</span></div></div></article>
+          <article class="media-card"><div class="media-image two"></div><div class="media-body"><div class="media-title">West corridor partition offset</div><div class="media-meta">Level 1 · 1 hr ago · Daniel Ruiz</div><div class="media-tags"><span class="tag">BUI-1038</span><span class="tag">Framing</span><span class="tag">Photo</span></div></div></article>
+          <article class="media-card"><div class="media-image three"></div><div class="media-body"><div class="media-title">Door 311 hardware set</div><div class="media-meta">Level 3 · Yesterday · Maya Chen</div><div class="media-tags"><span class="tag">BUI-1033</span><span class="tag">Door</span><span class="tag">Photo</span></div></div></article>
+          <article class="media-card"><div class="media-image four"></div><div class="media-body"><div class="media-title">Ceiling tile damage</div><div class="media-meta">Level 2 · Yesterday · Leo Park</div><div class="media-tags"><span class="tag">BUI-1027</span><span class="tag">Finish</span><span class="tag">Photo</span></div></div></article>
+          <article class="media-card"><div class="media-image two"></div><div class="media-body"><div class="media-title">Electrical room clearance</div><div class="media-meta">Level 1 · 2 days ago · Daniel Ruiz</div><div class="media-tags"><span class="tag">BUI-1014</span><span class="tag">Electrical</span><span class="tag">Video</span></div></div></article>
+          <article class="media-card"><div class="media-image one"></div><div class="media-body"><div class="media-title">Voice note: ceiling congestion</div><div class="media-meta">Level 2 · 2 days ago · Maya Chen</div><div class="media-tags"><span class="tag">Unlinked</span><span class="tag">Voice</span></div></div></article>
+          <article class="media-card"><div class="media-image four"></div><div class="media-body"><div class="media-title">South wall dimension check</div><div class="media-meta">Level 1 · 3 days ago · Leo Park</div><div class="media-tags"><span class="tag">Measurement</span><span class="tag">Framing</span></div></div></article>
+          <article class="media-card"><div class="media-image three"></div><div class="media-body"><div class="media-title">Open office above-ceiling walk</div><div class="media-meta">Level 2 · 3 days ago · Maya Chen</div><div class="media-tags"><span class="tag">360 video</span><span class="tag">MEP</span></div></div></article>
+        </div>
+      </section>
+
+      <!-- Issues -->
+      <section class="page view hidden" id="view-issues">
+        <div class="page-head">
+          <div><h1>Issues</h1><p class="subtitle">Track observations from field capture to reviewed RFI, punch item, or change evidence.</p></div>
+          <button class="primary-btn" id="newIssueBtn2"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>New issue</button>
+        </div>
+
+        <div class="issue-toolbar">
+          <div class="issue-toolbar-left">
+            <label class="mini-search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg><input placeholder="Search issues" /></label>
+            <select class="filter"><option>All statuses</option><option>Open</option><option>Review</option><option>Blocked</option><option>Closed</option></select>
+            <select class="filter"><option>All issue types</option><option>RFI candidate</option><option>Punch</option><option>Change evidence</option><option>Observation</option></select>
+            <select class="filter"><option>All assignees</option><option>Maya Chen</option><option>Daniel Ruiz</option><option>Leo Park</option></select>
+          </div>
+          <button class="secondary-btn">Export CSV</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>ID</th><th>Issue</th><th>Location</th><th>Source</th><th>Status</th><th>Assignee</th><th>Updated</th></tr></thead>
+            <tbody>
+              <tr data-open-issue="BUI-1042"><td><strong>BUI-1042</strong></td><td><div class="issue-title">HVAC duct conflicts with sprinkler line</div><div class="issue-sub">RFI candidate · High priority</div></td><td>Level 2 · Room 204</td><td>M-202 / FP-202</td><td><span class="status review">Review</span></td><td>Maya Chen</td><td>18 min</td></tr>
+              <tr><td><strong>BUI-1038</strong></td><td><div class="issue-title">Partition offset from A-202 layout</div><div class="issue-sub">Punch · Medium priority</div></td><td>Level 1 · West corridor</td><td>A-202</td><td><span class="status open">Open</span></td><td>Daniel Ruiz</td><td>1 hr</td></tr>
+              <tr><td><strong>BUI-1033</strong></td><td><div class="issue-title">Door hardware submittal mismatch</div><div class="issue-sub">RFI candidate · High priority</div></td><td>Level 3 · Room 311</td><td>A-601 / Submittal 087100</td><td><span class="status blocked">Blocked</span></td><td>Maya Chen</td><td>Yesterday</td></tr>
+              <tr><td><strong>BUI-1027</strong></td><td><div class="issue-title">Ceiling tile damage after MEP work</div><div class="issue-sub">Punch · Low priority</div></td><td>Level 2 · Open office</td><td>Field photo</td><td><span class="status open">Open</span></td><td>Leo Park</td><td>Yesterday</td></tr>
+              <tr><td><strong>BUI-1014</strong></td><td><div class="issue-title">Electrical room clearance incomplete</div><div class="issue-sub">Observation · Medium priority</div></td><td>Level 1 · E-101</td><td>E-202</td><td><span class="status closed">Closed</span></td><td>Daniel Ruiz</td><td>2 days</td></tr>
+              <tr><td><strong>BUI-1009</strong></td><td><div class="issue-title">Unverified ceiling height in Room 209</div><div class="issue-sub">Additional evidence required</div></td><td>Level 2 · Room 209</td><td>A-202 / A-501</td><td><span class="status review">Review</span></td><td>Maya Chen</td><td>3 days</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Reports -->
+      <section class="page view hidden" id="view-reports">
+        <div class="page-head">
+          <div><h1>Reports</h1><p class="subtitle">Generate review-ready RFI, punch, and change evidence packages with traceable sources.</p></div>
+          <button class="primary-btn">Generate report</button>
+        </div>
+
+        <div class="report-layout">
+          <div class="report-list">
+            <div class="report-item active"><div class="report-name">RFI Draft · BUI-1042</div><div class="report-meta">Awaiting PM review · Updated 22 min ago</div></div>
+            <div class="report-item"><div class="report-name">Punch List · Level 2</div><div class="report-meta">12 items · Generated today</div></div>
+            <div class="report-item"><div class="report-name">Change Evidence · Week 28</div><div class="report-meta">5 issues · Generated yesterday</div></div>
+            <div class="report-item"><div class="report-name">Daily Field Summary</div><div class="report-meta">July 9, 2026 · Approved</div></div>
+          </div>
+
+          <article class="report-preview">
+            <div class="doc-title">Request for Information — Draft</div>
+            <div class="doc-rule"></div>
+            <div class="doc-grid">
+              <div class="doc-key">Project</div><div class="doc-val">Pioneer Office Renovation</div>
+              <div class="doc-key">RFI reference</div><div class="doc-val">Draft from BUI-1042</div>
+              <div class="doc-key">Location</div><div class="doc-val">Level 2 · Room 204 · Grid C-4</div>
+              <div class="doc-key">Relevant drawings</div><div class="doc-val">M-202 Rev 3 · FP-202 Rev 2</div>
+              <div class="doc-key">Prepared by</div><div class="doc-val">Maya Chen</div>
+              <div class="doc-key">Status</div><div class="doc-val"><span class="status review">PM review</span></div>
+            </div>
+
+            <div class="doc-section"><h3>Subject</h3><p>Conflict between planned HVAC supply duct route and installed sprinkler main above Room 204.</p></div>
+            <div class="doc-section"><h3>Existing condition</h3><p>Field evidence captured on July 10 shows the installed sprinkler main crossing the planned route of the 24×14 supply duct near Grid C-4. The current evidence does not establish the available vertical clearance.</p></div>
+            <div class="doc-section"><h3>Drawing requirement</h3><div class="doc-quote">M-202 Rev 3, Detail 3 shows a continuous 24×14 supply duct through Room 204. FP-202 Rev 2 indicates the sprinkler main crossing the same plan area, but the relative elevation is not identified in the reviewed sheets.</div></div>
+            <div class="doc-section"><h3>Question</h3><p>Please confirm the required routing and elevation relationship between the supply duct and sprinkler main at Grid C-4. If rerouting is required, identify the preferred trade and any revised clearance requirement.</p></div>
+            <div class="doc-section"><h3>Schedule impact</h3><p>Duct installation in Room 204 is currently on hold pending direction. Continued delay may affect ceiling close-in planned for July 14.</p></div>
+            <div class="doc-section"><h3>Attached evidence</h3><p>1 field photograph, 1 voice note transcript, plan excerpts from M-202 Rev 3 and FP-202 Rev 2, and spatial issue location from the Buili model.</p></div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- New issue modal -->
+  <div class="modal-backdrop" id="issueModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <div class="modal-head"><h2 id="modalTitle">Create field issue</h2><button class="icon-btn" id="closeModal"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 5l14 14M19 5 5 19"/></svg></button></div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="field"><label>Floor</label><select><option>Level 2</option><option>Level 1</option><option>Level 3</option></select></div>
+          <div class="field"><label>Room / Zone</label><select><option>Room 204 — Conference</option><option>Room 201 — Open Office</option><option>Room 209 — Open Office</option></select></div>
+          <div class="field"><label>Issue type</label><select><option>Auto-classify after upload</option><option>RFI candidate</option><option>Punch</option><option>Change evidence</option><option>Observation</option></select></div>
+          <div class="field"><label>Priority</label><select><option>Medium</option><option>High</option><option>Low</option></select></div>
+          <div class="field full"><label>Field observation</label><textarea placeholder="Describe what you observed, or paste a voice note transcript.">Sprinkler main appears to block the planned HVAC duct route above Room 204.</textarea></div>
+          <div class="field full"><label>Evidence</label><div class="upload-zone">Drop photos, videos, measurements, or voice notes here<br/><span style="color:var(--green); font-weight:700">Browse files</span></div></div>
+        </div>
+      </div>
+      <div class="modal-foot"><button class="secondary-btn" id="cancelModal">Cancel</button><button class="primary-btn" id="createIssue">Create and analyze</button></div>
+    </div>
+  </div>
+
+  <script>
+    const navButtons = [...document.querySelectorAll('.nav button[data-view]')];
+    const views = [...document.querySelectorAll('.view')];
+    const crumb = document.getElementById('crumbTitle');
+    const titleMap = { overview: 'Overview', drawings: 'Drawings & 3D', evidence: 'Field Evidence', issues: 'Issues', reports: 'Reports' };
+
+    function showView(name) {
+      views.forEach(v => v.classList.toggle('hidden', v.id !== `view-${name}`));
+      navButtons.forEach(b => b.classList.toggle('active', b.dataset.view === name));
+      crumb.textContent = titleMap[name] || name;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    navButtons.forEach(btn => btn.addEventListener('click', () => showView(btn.dataset.view)));
+    document.querySelectorAll('[data-jump]').forEach(btn => btn.addEventListener('click', () => showView(btn.dataset.jump)));
+
+    const modal = document.getElementById('issueModal');
+    const openModal = () => modal.classList.add('open');
+    const closeModal = () => modal.classList.remove('open');
+
+    ['newIssueBtn','newIssueBtn2','uploadBtn','uploadBtn2'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('click', openModal);
+    });
+    document.getElementById('closeModal').addEventListener('click', closeModal);
+    document.getElementById('cancelModal').addEventListener('click', closeModal);
+    document.getElementById('createIssue').addEventListener('click', () => {
+      closeModal();
+      showView('issues');
+    });
+    modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+    document.querySelectorAll('[data-open-issue="BUI-1042"], .issue-pin[data-pin="BUI-1042"]').forEach(el => {
+      el.addEventListener('click', () => showView('drawings'));
+    });
+
+    const modeButtons = [...document.querySelectorAll('#viewMode button')];
+    const planSvg = document.getElementById('planSvg');
+    modeButtons.forEach(btn => btn.addEventListener('click', () => {
+      modeButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const mode = btn.dataset.mode;
+      if (mode === 'model') {
+        planSvg.style.transform = 'perspective(900px) rotateX(52deg) rotateZ(-10deg) scale(.92)';
+        planSvg.style.transition = 'transform .35s ease';
+      } else {
+        planSvg.style.transform = 'none';
+      }
+      planSvg.style.opacity = mode === 'overlay' ? '.72' : '1';
+    }));
+
+    document.querySelectorAll('.sheet-item').forEach(item => item.addEventListener('click', () => {
+      document.querySelectorAll('.sheet-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+    }));
+  </script>
+</body>
+</html>

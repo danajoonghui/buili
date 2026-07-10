@@ -17,7 +17,7 @@ services:
     plan: starter
     buildCommand: pip install -e .
     startCommand: uvicorn services.api.buili.main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /healthz
+    healthCheckPath: /readyz
     autoDeployTrigger: commit
     disk:
       name: buili-api-storage
@@ -40,7 +40,35 @@ services:
       - key: BUILI_PUBLIC_BASE_URL
         value: /api
       - key: BUILI_CORS_ORIGINS
-        value: "*"
+        value: https://buili-web.onrender.com
+      - key: BUILI_AUTH_REQUIRED
+        value: true
+      - key: BUILI_AUTH_SECRET
+        generateValue: true
+      - key: BUILI_SECURE_COOKIES
+        value: true
+      - key: BUILI_SESSION_HOURS
+        value: 12
+      - key: BUILI_REMEMBER_SESSION_DAYS
+        value: 30
+      - key: BUILI_PILOT_SEED_ENABLED
+        value: true
+      - key: BUILI_PILOT_EMAIL
+        value: jordan.davis@northstarbuild.example
+      - key: BUILI_PILOT_NAME
+        value: Jordan Davis
+      - key: BUILI_PILOT_ORG_NAME
+        value: Northstar Builders
+      - key: BUILI_PILOT_PROJECT_NAME
+        value: Cooper Residence — Electrical Rough-In Verification
+      # Enter this managed secret when creating/updating the Blueprint. It is
+      # intentionally never committed or exposed to NEXT_PUBLIC_* variables.
+      - key: BUILI_PILOT_PASSWORD
+        sync: false
+      - key: BUILI_MAX_UPLOAD_BYTES
+        value: 262144000
+      - key: BUILI_SPATIAL_ENABLED
+        value: true
 
   - type: web
     name: buili-web
@@ -49,7 +77,8 @@ services:
     plan: free
     buildCommand: npm ci && npm --workspace apps/web run build
     startCommand: npm --workspace apps/web run start -- --port $PORT
-    healthCheckPath: /
+    # Exercise the same-origin Next.js proxy as well as the FastAPI process.
+    healthCheckPath: /api/readyz
     autoDeployTrigger: commit
     envVars:
       - key: NODE_VERSION

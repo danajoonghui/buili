@@ -3,12 +3,12 @@ import "./globals.css";
 import { PwaRegistration } from "@/components/PwaRegistration";
 
 export const metadata: Metadata = {
-  title: "Buili",
-  description: "Evidence-first construction issue review",
+  title: "BUILI — Construction Verification Intelligence",
+  description: "Turn field observations into review-ready, source-cited construction issue packages.",
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: "/buili_favicon_transparent.png",
-    apple: "/buili_favicon_transparent.png"
+    icon: "/brand/buili-mark.png",
+    apple: "/brand/buili-mark.png"
   },
   appleWebApp: {
     capable: true,
@@ -25,7 +25,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ko">
+    <html lang="en">
       <body>
         {children}
         <PwaRegistration />

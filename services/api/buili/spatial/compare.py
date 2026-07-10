@@ -15,14 +15,18 @@ from ..models import (
     SpatialAsset,
     SpatialEvidence,
 )
+from .plan_parser import plan_graph_is_current
 
 
 def _latest_plan_graph(session: Session, project_id: str) -> PlanGraph | None:
-    return session.scalar(
-        select(PlanGraph)
-        .where(PlanGraph.project_id == project_id)
-        .order_by(PlanGraph.created_at.desc())
+    graphs = list(
+        session.scalars(
+            select(PlanGraph)
+            .where(PlanGraph.project_id == project_id)
+            .order_by(PlanGraph.created_at.desc())
+        ).all()
     )
+    return next((graph for graph in graphs if plan_graph_is_current(session, graph)), None)
 
 
 def _latest_alignment(session: Session, project_id: str) -> SpatialAlignment | None:
@@ -179,6 +183,8 @@ def compare_project_spatial(
     )
     if not plan_graph or plan_graph.project_id != project_id:
         raise ValueError("plan graph not found for project")
+    if not plan_graph_is_current(session, plan_graph):
+        raise ValueError("plan graph references a superseded drawing revision")
     alignment = (
         session.get(SpatialAlignment, alignment_id)
         if alignment_id

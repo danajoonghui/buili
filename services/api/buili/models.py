@@ -46,6 +46,50 @@ class Membership(TimestampMixin, Base):
     role: Mapped[str] = mapped_column(String, default="owner")
 
 
+class UserCredential(TimestampMixin, Base):
+    """Additive credential record for legacy databases that already contain users.
+
+    Password material is never stored on ``users``.  Keeping credentials in a
+    separate one-to-one table lets deployed pilot databases adopt authentication
+    through ``create_all`` without an unsafe in-place column migration.
+    """
+
+    __tablename__ = "user_credentials"
+
+    credential_id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: new_id("cred")
+    )
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.user_id"), unique=True, index=True
+    )
+    password_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    failed_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    password_changed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    disabled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class LoginSession(TimestampMixin, Base):
+    """Revocable server-side browser session.
+
+    Only a keyed hash of the bearer secret is persisted.  A database disclosure
+    therefore does not expose live session cookies.
+    """
+
+    __tablename__ = "login_sessions"
+
+    session_id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: new_id("ses"))
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.user_id"), index=True)
+    org_id: Mapped[str] = mapped_column(ForeignKey("organizations.org_id"), index=True)
+    role: Mapped[str] = mapped_column(String, default="project_manager")
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    user_agent_hash: Mapped[str] = mapped_column(String(64), default="")
+    ip_hash: Mapped[str] = mapped_column(String(64), default="")
+
+
 class Project(TimestampMixin, Base):
     __tablename__ = "projects"
 
@@ -326,3 +370,226 @@ class UploadIntent(TimestampMixin, Base):
     size: Mapped[int] = mapped_column(Integer, default=0)
     r2_key: Mapped[str] = mapped_column(String, nullable=False)
     status: Mapped[str] = mapped_column(String, default="presigned")
+
+
+# Workflow/control-plane records intentionally live in additive tables.  The pilot
+# database is already deployed as SQLite in a few environments and create_all does
+# not add columns to existing tables.  Keeping these records separate lets older
+# databases upgrade safely while preserving immutable review, revision and report
+# history.
+
+
+class ProjectProfile(TimestampMixin, Base):
+    __tablename__ = "project_profiles"
+
+    profile_id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: new_id("prf")
+    )
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.project_id"), unique=True, index=True
+    )
+    client: Mapped[str] = mapped_column(String, default="")
+    timezone: Mapped[str] = mapped_column(String, default="UTC")
+    unit_system: Mapped[str] = mapped_column(String, default="imperial")
+    settings_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    workflow_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+
+
+class DirectoryMember(TimestampMixin, Base):
+    __tablename__ = "directory_members"
+
+    directory_id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: new_id("dir")
+    )
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.project_id"), index=True)
+    person_name: Mapped[str] = mapped_column(String, nullable=False)
+    email: Mapped[str] = mapped_column(String, default="")
+    company: Mapped[str] = mapped_column(String, default="")
+    role: Mapped[str] = mapped_column(String, default="field_user")
+    trade: Mapped[str] = mapped_column(String, default="")
+    status: Mapped[str] = mapped_column(String, default="active")
+    notification_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    access_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class DocumentRevision(TimestampMixin, Base):
+    __tablename__ = "document_revisions"
+
+    revision_id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: new_id("rev")
+    )
+    document_id: Mapped[str] = mapped_column(
+        ForeignKey("documents.doc_id"), unique=True, index=True
+    )
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.project_id"), index=True)
+    logical_key: Mapped[str] = mapped_column(String, index=True)
+    sheet_number: Mapped[str] = mapped_column(String, default="")
+    revision: Mapped[str] = mapped_column(String, default="")
+    issue_date: Mapped[str] = mapped_column(String, default="")
+    discipline: Mapped[str] = mapped_column(String, default="")
+    state: Mapped[str] = mapped_column(String, default="unclassified", index=True)
+    supersedes_document_id: Mapped[str] = mapped_column(String, default="")
+    activated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    source_hash: Mapped[str] = mapped_column(String, default="")
+    upload_actor: Mapped[str] = mapped_column(String, default="system")
+    parse_version: Mapped[str] = mapped_column(String, default="buili-parser-v1")
+
+
+class FieldEvidence(TimestampMixin, Base):
+    __tablename__ = "field_evidence"
+
+    evidence_id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: new_id("fld")
+    )
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.project_id"), index=True)
+    client_capture_id: Mapped[str] = mapped_column(String, default="", index=True)
+    media_id: Mapped[str] = mapped_column(String, default="")
+    media_type: Mapped[str] = mapped_column(String, default="photo")
+    filename: Mapped[str] = mapped_column(String, default="")
+    mime: Mapped[str] = mapped_column(String, default="")
+    uri: Mapped[str] = mapped_column(String, default="")
+    hash: Mapped[str] = mapped_column(String, default="")
+    captured_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    author: Mapped[str] = mapped_column(String, default="")
+    location_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    location_method: Mapped[str] = mapped_column(String, default="manual")
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    quality_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    sufficiency: Mapped[str] = mapped_column(String, default="unreviewed")
+    status: Mapped[str] = mapped_column(String, default="unlinked", index=True)
+
+
+class EvidenceLink(TimestampMixin, Base):
+    __tablename__ = "evidence_links"
+
+    link_id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: new_id("lnk")
+    )
+    evidence_id: Mapped[str] = mapped_column(ForeignKey("field_evidence.evidence_id"), index=True)
+    issue_id: Mapped[str] = mapped_column(ForeignKey("issues.issue_id"), index=True)
+    relevance: Mapped[str] = mapped_column(String, default="supports")
+    annotation: Mapped[str] = mapped_column(Text, default="")
+    linked_by: Mapped[str] = mapped_column(String, default="system")
+
+
+class IssueWorkflow(TimestampMixin, Base):
+    __tablename__ = "issue_workflows"
+
+    workflow_id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: new_id("iwf")
+    )
+    issue_id: Mapped[str] = mapped_column(
+        ForeignKey("issues.issue_id"), unique=True, index=True
+    )
+    priority: Mapped[str] = mapped_column(String, default="medium")
+    expected_condition: Mapped[str] = mapped_column(Text, default="")
+    difference: Mapped[str] = mapped_column(Text, default="")
+    recommended_route: Mapped[str] = mapped_column(String, default="observation")
+    evidence_gaps_json: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    source_status: Mapped[str] = mapped_column(String, default="unresolved")
+    source_snapshot_json: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    impact_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    review_status: Mapped[str] = mapped_column(String, default="review_ready", index=True)
+    reviewer: Mapped[str] = mapped_column(String, default="")
+    version: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class ReviewRecord(TimestampMixin, Base):
+    __tablename__ = "review_records"
+
+    review_id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: new_id("rvw")
+    )
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.project_id"), index=True)
+    issue_id: Mapped[str] = mapped_column(ForeignKey("issues.issue_id"), index=True)
+    reviewer: Mapped[str] = mapped_column(String, nullable=False)
+    decision: Mapped[str] = mapped_column(String, nullable=False)
+    reason_code: Mapped[str] = mapped_column(String, default="")
+    reason: Mapped[str] = mapped_column(Text, default="")
+    issue_version: Mapped[int] = mapped_column(Integer, default=1)
+    snapshot_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+
+
+class ReportRecord(TimestampMixin, Base):
+    __tablename__ = "report_records"
+
+    report_id: Mapped[str] = mapped_column(String, primary_key=True)
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.project_id"), index=True)
+    report_type: Mapped[str] = mapped_column(String, nullable=False)
+    title: Mapped[str] = mapped_column(String, default="")
+    status: Mapped[str] = mapped_column(String, default="draft", index=True)
+    created_by: Mapped[str] = mapped_column(String, default="system")
+
+
+class ReportVersion(TimestampMixin, Base):
+    __tablename__ = "report_versions"
+
+    version_id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: new_id("rpv")
+    )
+    report_id: Mapped[str] = mapped_column(ForeignKey("report_records.report_id"), index=True)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    format: Mapped[str] = mapped_column(String, default="pdf")
+    path: Mapped[str] = mapped_column(String, default="")
+    checksum: Mapped[str] = mapped_column(String, nullable=False)
+    source_snapshot_json: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    issue_snapshot_json: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    status: Mapped[str] = mapped_column(String, default="draft")
+    created_by: Mapped[str] = mapped_column(String, default="system")
+    reviewer: Mapped[str] = mapped_column(String, default="")
+    issued_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class ReportScope(TimestampMixin, Base):
+    """Immutable draft selection intent used by the issuance gate.
+
+    Legacy project-wide drafts may issue the approved subset.  A user-curated
+    selection is strict: every selected issue must pass the human and evidence
+    gates, so the official artifact never silently changes scope.
+    """
+
+    __tablename__ = "report_scopes"
+
+    scope_id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: new_id("rps")
+    )
+    report_id: Mapped[str] = mapped_column(
+        ForeignKey("report_records.report_id"), unique=True, index=True
+    )
+    issue_ids_json: Mapped[list[str]] = mapped_column(JSON, default=list)
+    explicit_selection: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class AuditEvent(Base):
+    __tablename__ = "audit_events"
+
+    audit_id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: new_id("aud")
+    )
+    org_id: Mapped[str] = mapped_column(String, default="", index=True)
+    project_id: Mapped[str] = mapped_column(String, default="", index=True)
+    actor: Mapped[str] = mapped_column(String, default="system")
+    action: Mapped[str] = mapped_column(String, index=True)
+    entity_type: Mapped[str] = mapped_column(String, index=True)
+    entity_id: Mapped[str] = mapped_column(String, index=True)
+    before_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    after_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+
+
+class Notification(TimestampMixin, Base):
+    __tablename__ = "notifications"
+
+    notification_id: Mapped[str] = mapped_column(
+        String, primary_key=True, default=lambda: new_id("ntf")
+    )
+    project_id: Mapped[str] = mapped_column(ForeignKey("projects.project_id"), index=True)
+    recipient: Mapped[str] = mapped_column(String, default="")
+    event_type: Mapped[str] = mapped_column(String, index=True)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    body: Mapped[str] = mapped_column(Text, default="")
+    entity_type: Mapped[str] = mapped_column(String, default="")
+    entity_id: Mapped[str] = mapped_column(String, default="")
+    channel_json: Mapped[list[str]] = mapped_column(JSON, default=lambda: ["in_app"])
+    read_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

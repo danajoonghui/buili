@@ -158,6 +158,53 @@ def snap_and_merge_segments(
     return snapped
 
 
+def split_segments_at_junctions(
+    segments: list[AxisSegment],
+    *,
+    junction_tolerance_px: float = 10.0,
+    min_length_px: float = 40.0,
+) -> list[AxisSegment]:
+    """Split long raster wall axes where perpendicular wall axes meet them."""
+
+    by_orientation = {
+        "h": [segment for segment in segments if segment.orientation == "h"],
+        "v": [segment for segment in segments if segment.orientation == "v"],
+    }
+    split: list[AxisSegment] = []
+    for segment in segments:
+        cuts = [min(segment.start_px, segment.end_px), max(segment.start_px, segment.end_px)]
+        perpendicular = by_orientation["v" if segment.orientation == "h" else "h"]
+        for other in perpendicular:
+            if segment.orientation == "h":
+                crosses_axis = other.start_px - junction_tolerance_px <= segment.fixed_px <= other.end_px + junction_tolerance_px
+                cut_value = other.fixed_px
+            else:
+                crosses_axis = other.start_px - junction_tolerance_px <= segment.fixed_px <= other.end_px + junction_tolerance_px
+                cut_value = other.fixed_px
+            if not crosses_axis:
+                continue
+            if min(segment.start_px, segment.end_px) - junction_tolerance_px <= cut_value <= max(segment.start_px, segment.end_px) + junction_tolerance_px:
+                cuts.append(float(cut_value))
+
+        ordered = sorted(cuts)
+        deduped: list[float] = []
+        for value in ordered:
+            if not deduped or abs(value - deduped[-1]) > junction_tolerance_px:
+                deduped.append(value)
+        for left, right in zip(deduped, deduped[1:], strict=False):
+            if right - left >= min_length_px:
+                split.append(
+                    AxisSegment(
+                        orientation=segment.orientation,
+                        fixed_px=segment.fixed_px,
+                        start_px=left,
+                        end_px=right,
+                        thickness_px=segment.thickness_px,
+                    )
+                )
+    return split or segments
+
+
 def _segments_from_image(rgb: np.ndarray) -> tuple[list[AxisSegment], dict[str, Any]]:
     mask = _dark_mask(rgb, y_window=(0.16, 0.9))
     min_length = max(42, min(rgb.shape[:2]) // 30)
@@ -175,6 +222,7 @@ def _segments_from_image(rgb: np.ndarray) -> tuple[list[AxisSegment], dict[str, 
         "image_size_px": [int(rgb.shape[1]), int(rgb.shape[0])],
         "raw_axis_segments": len(raw_segments),
         "merged_axis_segments": len(merged),
+        "junction_split_axis_segments": None,
         "min_length_px": min_length,
         "y_window": [0.16, 0.9],
     }

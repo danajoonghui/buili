@@ -13,10 +13,12 @@
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "@types/three": "^0.185.1",
     "lucide-react": "latest",
-    "next": "latest",
+    "next": "16.2.9",
     "react": "latest",
     "react-dom": "latest",
+    "three": "^0.185.1",
     "typescript": "latest"
   }
 }

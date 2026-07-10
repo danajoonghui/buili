@@ -22,7 +22,12 @@ from .alignment import create_spatial_alignment
 from .compare import compare_project_spatial
 from .field_capture import create_field_asset_from_frames, ingest_field_pose_frame
 from .geometry import build_design_glb
-from .plan_parser import create_plan_graph_record
+from .plan_parser import (
+    create_plan_graph_record,
+    plan_graph_is_current,
+    plan_graph_provenance,
+    spatial_asset_is_current,
+)
 from .schemas import (
     Design3DRequest,
     FieldPoseFrameCreate,
@@ -48,11 +53,14 @@ def _project_or_404(session: Session, project_id: str) -> Project:
 
 
 def _latest_plan_graph(session: Session, project_id: str) -> PlanGraph | None:
-    return session.scalar(
-        select(PlanGraph)
-        .where(PlanGraph.project_id == project_id)
-        .order_by(PlanGraph.created_at.desc())
+    graphs = list(
+        session.scalars(
+            select(PlanGraph)
+            .where(PlanGraph.project_id == project_id)
+            .order_by(PlanGraph.created_at.desc())
+        ).all()
     )
+    return next((graph for graph in graphs if plan_graph_is_current(session, graph)), None)
 
 
 @router.post("/projects/{project_id}/spatial/plan-graph", response_model=PlanGraphOut)
@@ -104,13 +112,22 @@ def create_design_3d(
     )
     if not graph or graph.project_id != project_id:
         raise HTTPException(status_code=404, detail="plan graph not found")
+    if not plan_graph_is_current(session, graph):
+        raise HTTPException(
+            status_code=409,
+            detail="plan graph references a superseded or changed drawing revision",
+        )
+    provenance = plan_graph_provenance(graph)
     if not payload.force:
         existing = session.scalar(
             select(SpatialAsset)
             .where(SpatialAsset.project_id == project_id, SpatialAsset.type == "design_glb")
             .order_by(SpatialAsset.created_at.desc())
         )
-        if existing:
+        if existing and all(
+            (existing.metadata_json or {}).get(key) == provenance.get(key)
+            for key in ("source_doc_id", "source_hash", "source_revision")
+        ) and (existing.metadata_json or {}).get("plan_graph_id") == graph.id:
             return existing
     asset_id = new_id("spa")
     uri, metadata = build_design_glb(graph.graph_json or {}, project_id, asset_id)
@@ -119,7 +136,7 @@ def create_design_3d(
         project_id=project_id,
         type="design_glb",
         uri=uri,
-        metadata_json={**metadata, "plan_graph_id": graph.id},
+        metadata_json={**metadata, "plan_graph_id": graph.id, **provenance},
     )
     session.add(asset)
     session.commit()
@@ -224,6 +241,8 @@ def get_spatial_asset(asset_id: str, session: Session = Depends(get_session)) ->
     asset = session.get(SpatialAsset, asset_id)
     if not asset:
         raise HTTPException(status_code=404, detail="spatial asset not found")
+    if not spatial_asset_is_current(session, asset):
+        raise HTTPException(status_code=409, detail="spatial asset source revision is stale")
     return asset
 
 
@@ -232,6 +251,8 @@ def download_spatial_asset(asset_id: str, session: Session = Depends(get_session
     asset = session.get(SpatialAsset, asset_id)
     if not asset:
         raise HTTPException(status_code=404, detail="spatial asset not found")
+    if not spatial_asset_is_current(session, asset):
+        raise HTTPException(status_code=409, detail="spatial asset source revision is stale")
     path = get_settings().storage_root / Path(asset.uri)
     if not path.exists():
         raise HTTPException(status_code=404, detail="spatial asset file not found")

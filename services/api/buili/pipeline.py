@@ -5,9 +5,11 @@ import json
 import math
 import random
 import re
+import shutil
 import time
 import zipfile
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 from xml.etree import ElementTree
@@ -19,6 +21,8 @@ from sqlalchemy.orm import Session
 
 from .models import (
     Document,
+    EvidenceLink,
+    FieldEvidence,
     FieldPoseFrame,
     Frame,
     Issue,
@@ -26,24 +30,29 @@ from .models import (
     Job,
     ModelRun,
     Observation,
-    PlanGraph,
+    Organization,
     PlanEntity,
+    PlanGraph,
     Project,
     Sheet,
     SiteMedia,
-    SpecChunk,
     SpatialAlignment,
     SpatialAsset,
     SpatialEvidence,
+    SpecChunk,
     new_id,
 )
-from .storage import object_path
 from .spatial.alignment import create_spatial_alignment
 from .spatial.compare import compare_project_spatial
 from .spatial.field_capture import create_field_asset_from_frames, ingest_field_pose_frame
 from .spatial.geometry import build_design_glb
-from .spatial.plan_parser import create_plan_graph_record
-
+from .spatial.plan_parser import (
+    create_plan_graph_record,
+    plan_graph_is_current,
+    plan_graph_provenance,
+    spatial_asset_is_current,
+)
+from .storage import object_path
 
 JOB_STATES = [
     "queued",
@@ -89,6 +98,48 @@ DISCIPLINE_BY_PREFIX = {
     "P": "plumbing",
     "FS": "fire_safety",
 }
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+PILOT_PLAN_SOURCE = REPO_ROOT / "data" / "sources" / "utah-e11-electrical-plans.pdf"
+PILOT_EVIDENCE_ROOT = REPO_ROOT / "apps" / "web" / "public" / "demo" / "northstar" / "evidence"
+PILOT_EVIDENCE = (
+    {
+        "filename": "garage-east-wall-context.png",
+        "mime": "image/png",
+        "media_type": "photo",
+        "capture_id": "northstar-cooper-garage-context",
+        "legacy_capture_id": "northstar-l02-c4-context",
+        "label": "Garage east-wall context near entry door",
+        "quality": {"context_visible": True, "location_visible": True, "score": 0.94},
+    },
+    {
+        "filename": "receptacle-rough-in-detail.png",
+        "mime": "image/png",
+        "media_type": "photo",
+        "capture_id": "northstar-cooper-garage-gfci-detail",
+        "legacy_capture_id": "northstar-l02-c4-receptacle-detail",
+        "label": "Garage GFCI rough-in detail",
+        "quality": {"detail_visible": True, "focus": "sharp", "score": 0.96},
+    },
+    {
+        "filename": "box-elevation-measurement.png",
+        "mime": "image/png",
+        "media_type": "photo",
+        "capture_id": "northstar-cooper-garage-measurement",
+        "legacy_capture_id": "northstar-l02-c4-measurement",
+        "label": "Garage GFCI box centerline measurement",
+        "quality": {"measurement_visible": True, "scale_visible": True, "score": 0.97},
+    },
+    {
+        "filename": "foreman-voice-note.mp3",
+        "mime": "audio/mpeg",
+        "media_type": "audio",
+        "capture_id": "northstar-cooper-garage-foreman-note",
+        "legacy_capture_id": "northstar-l02-c4-foreman-note",
+        "label": "Mike Torres foreman voice note",
+        "quality": {"transcript_available": True, "speech_clear": True, "score": 0.92},
+    },
+)
 
 
 @dataclass(frozen=True)
@@ -319,6 +370,420 @@ def _ensure_demo_assets(project: Project, session: Session) -> None:
     session.commit()
 
 
+def _ensure_pilot_plan(project: Project, session: Session) -> Document:
+    from .workflows import get_or_create_revision
+
+    def activate(record: Document) -> None:
+        revision = get_or_create_revision(session, record, state="current")
+        revision.state = "current"
+        revision.revision = record.revision
+        revision.sheet_number = "E1.1"
+        revision.issue_date = "2021-01-11"
+        revision.source_hash = record.hash
+        revision.activated_at = revision.activated_at or datetime.utcnow()
+
+    r2_key = (
+        f"org/{project.org_id}/project/{project.project_id}/raw/"
+        "Cooper-Residence-E1.1-Electrical.pdf"
+    )
+    document = session.scalar(
+        select(Document).where(
+            Document.project_id == project.project_id,
+            Document.type == "plan",
+        )
+    )
+    if document:
+        destination = object_path(r2_key)
+        if PILOT_PLAN_SOURCE.exists():
+            shutil.copy2(PILOT_PLAN_SOURCE, destination)
+        document.filename = "Cooper-Residence-E1.1-Electrical.pdf"
+        document.mime = "application/pdf"
+        document.r2_key = r2_key
+        document.hash = hashlib.sha256(destination.read_bytes()).hexdigest()
+        document.revision = "Final"
+        document.size = destination.stat().st_size
+        document.metadata_json = {
+            "sheet_number": "E1.1",
+            "discipline": "electrical",
+            "issue_date": "2021-01-11",
+            "logical_key": "plan:E1.1",
+            "source": "public-government-plan-demo",
+        }
+        activate(document)
+        return document
+    if not PILOT_PLAN_SOURCE.is_file():
+        raise FileNotFoundError(f"pilot plan source is missing: {PILOT_PLAN_SOURCE}")
+    destination = object_path(r2_key)
+    shutil.copy2(PILOT_PLAN_SOURCE, destination)
+    document = Document(
+        project_id=project.project_id,
+        type="plan",
+        filename="Cooper-Residence-E1.1-Electrical.pdf",
+        mime="application/pdf",
+        r2_key=r2_key,
+        hash=hashlib.sha256(destination.read_bytes()).hexdigest(),
+        revision="Final",
+        parsed_status="uploaded",
+        size=destination.stat().st_size,
+        metadata_json={
+            "sheet_number": "E1.1",
+            "discipline": "electrical",
+            "issue_date": "2021-01-11",
+            "logical_key": "plan:E1.1",
+            "source": "public-government-plan-demo",
+        },
+    )
+    session.add(document)
+    session.flush()
+    activate(document)
+    return document
+
+
+def _evidence_transcript() -> str:
+    vtt = PILOT_EVIDENCE_ROOT / "foreman-voice-note.vtt"
+    if vtt.is_file():
+        lines = [
+            line.strip()
+            for line in vtt.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+            and "-->" not in line
+            and line.strip().upper() != "WEBVTT"
+            and not line.strip().isdigit()
+        ]
+        if lines:
+            return " ".join(lines)
+    return (
+        "Cooper Residence garage east wall. The GFCI box centerline measures 12 inches "
+        "above the floor, below the E1.1 note 3 minimum of 18 inches. The wall is open "
+        "and Delta Electrical needs to verify before close-in."
+    )
+
+
+def _ensure_pilot_media(
+    project: Project, session: Session
+) -> list[tuple[SiteMedia, FieldEvidence, dict[str, Any]]]:
+    records: list[tuple[SiteMedia, FieldEvidence, dict[str, Any]]] = []
+    transcript = _evidence_transcript()
+    for spec in PILOT_EVIDENCE:
+        source = PILOT_EVIDENCE_ROOT / str(spec["filename"])
+        if not source.is_file():
+            continue
+        r2_key = (
+            f"org/{project.org_id}/project/{project.project_id}/raw/"
+            f"pilot_{spec['filename']}"
+        )
+        destination = object_path(r2_key)
+        digest = hashlib.sha256(source.read_bytes()).hexdigest()
+        if not destination.exists() or hashlib.sha256(destination.read_bytes()).hexdigest() != digest:
+            shutil.copy2(source, destination)
+        media = session.scalar(
+            select(SiteMedia).where(
+                SiteMedia.project_id == project.project_id,
+                SiteMedia.filename == spec["filename"],
+            )
+        )
+        metadata = {
+            "source": "synthetic_pilot_evidence",
+            "company": "Northstar Builders",
+            "project": project.name,
+            "location": {
+                "floor": "Main Floor",
+                "room": "Garage",
+                "wall": "East wall near entry door",
+                "sheet": "E1.1",
+                "x": 0.61,
+                "y": 0.43,
+            },
+            "captured_by": "Mike Torres, Electrical Foreman",
+            "captured_at": "2026-07-08T14:32:00Z",
+            "label": spec["label"],
+        }
+        thumbnail = source.with_name(f"{source.stem}-thumb.webp")
+        if thumbnail.is_file():
+            metadata["thumbnail_uri"] = (
+                f"/demo/northstar/evidence/{thumbnail.name}"
+            )
+        if spec["media_type"] == "audio":
+            metadata.update(
+                {
+                    "transcript": transcript,
+                    "captions_uri": "/demo/northstar/evidence/foreman-voice-note.vtt",
+                    "duration_seconds": 32.15,
+                }
+            )
+        if not media:
+            media = SiteMedia(
+                project_id=project.project_id,
+                filename=str(spec["filename"]),
+                mime=str(spec["mime"]),
+                r2_key=r2_key,
+                hash=digest,
+                metadata_json=metadata,
+            )
+            session.add(media)
+            session.flush()
+        else:
+            media.mime = str(spec["mime"])
+            media.r2_key = r2_key
+            media.hash = digest
+            media.metadata_json = metadata
+        field = session.scalar(
+            select(FieldEvidence).where(
+                FieldEvidence.project_id == project.project_id,
+                FieldEvidence.client_capture_id.in_(
+                    [spec["capture_id"], spec.get("legacy_capture_id", "")]
+                ),
+            )
+        )
+        if not field:
+            field = FieldEvidence(
+                project_id=project.project_id,
+                client_capture_id=str(spec["capture_id"]),
+                media_id=media.media_id,
+                media_type=str(spec["media_type"]),
+                filename=str(spec["filename"]),
+                mime=str(spec["mime"]),
+                uri=r2_key,
+                hash=digest,
+                author="Mike Torres · Delta Electrical",
+                location_json=metadata["location"],
+                location_method="plan_pin+wall_verified",
+                metadata_json={
+                    "label": spec["label"],
+                    "transcript": transcript if spec["media_type"] == "audio" else "",
+                    "captured_at_local": "2026-07-08 07:32 PDT",
+                },
+                quality_json=dict(spec["quality"]),
+                sufficiency="sufficient",
+                status="unlinked",
+            )
+            session.add(field)
+            session.flush()
+        else:
+            field.client_capture_id = str(spec["capture_id"])
+            field.media_id = media.media_id
+            field.media_type = str(spec["media_type"])
+            field.filename = str(spec["filename"])
+            field.mime = str(spec["mime"])
+            field.uri = r2_key
+            field.hash = digest
+            field.author = "Mike Torres · Delta Electrical"
+            field.location_json = metadata["location"]
+            field.location_method = "plan_pin+wall_verified"
+            field.metadata_json = {
+                "label": spec["label"],
+                "transcript": transcript if spec["media_type"] == "audio" else "",
+                "captured_at_local": "2026-07-08 07:32 MDT",
+            }
+            field.quality_json = dict(spec["quality"])
+            field.sufficiency = "sufficient"
+        records.append((media, field, spec))
+    session.commit()
+    return records
+
+
+def _link_pilot_evidence(
+    project: Project,
+    records: list[tuple[SiteMedia, FieldEvidence, dict[str, Any]]],
+    session: Session,
+) -> None:
+    if not records:
+        return
+    issue = session.scalar(
+        select(Issue)
+        .where(Issue.project_id == project.project_id)
+        .order_by(Issue.confidence.desc())
+    )
+    if not issue:
+        return
+    document = session.scalar(
+        select(Document).where(Document.project_id == project.project_id, Document.type == "plan")
+    )
+    issue.type = "location_mismatch"
+    issue.discipline = "electrical"
+    issue.severity = "major"
+    issue.room = "Main Floor · Garage · East wall near entry door"
+    issue.title = "Garage GFCI box elevation below E1.1 minimum"
+    issue.description = (
+        "The garage east-wall GFCI box centerline was measured at 12 inches above the "
+        "floor. E1.1 Electrical Note 3 requires garage outlets to be a minimum of 18 "
+        "inches off the floor. The wall remains open for verification."
+    )
+    issue.recommended_action = (
+        "Confirm whether the box must be raised to at least 18 inches AFF before wall "
+        "close-in; relocate it or document the engineer-approved disposition."
+    )
+    issue.assignee = "Jordan Davis"
+    issue.due_date = "2026-07-11"
+    issue.subcontractor = "Delta Electrical"
+    issue.requirement = {
+        "source": "E1.1",
+        "document_id": document.doc_id if document else "",
+        "revision": "Final",
+        "citation": "Electrical Notes, Note 3",
+        "text": (
+            "GFCI protection of outlets required in bathrooms and garages "
+            '(up min. 18" off floor), outdoors included.'
+        ),
+    }
+    issue.observation = {
+        "media_id": records[2][0].media_id if len(records) > 2 else records[0][0].media_id,
+        "text": "Tape measurement and foreman voice note record the garage GFCI box at 12 inches AFF.",
+        "measured_value": 12,
+        "expected_value": 18,
+        "unit": "in AFF",
+    }
+    issue.plan_location = {
+        "sheet_id": "E1.1",
+        "sheet_number": "E1.1",
+        "floor": "Main Floor",
+        "room": "Garage",
+        "wall": "East wall near entry door",
+        "x": 0.61,
+        "y": 0.43,
+        "bbox": [0.57, 0.39, 0.65, 0.47],
+    }
+    issue.rfi_draft = (
+        "Please confirm whether the garage east-wall GFCI box must be raised from the "
+        "observed 12-inch AFF centerline to at least 18 inches AFF per E1.1 Electrical "
+        "Note 3 before wall close-in?"
+    )
+    from .workflows import (
+        get_or_create_issue_workflow,
+        get_or_create_revision,
+        source_snapshot_for_issue,
+    )
+
+    if document:
+        revision = get_or_create_revision(session, document, state="current")
+        revision.state = "current"
+        revision.revision = document.revision
+        revision.sheet_number = "E1.1"
+        revision.issue_date = "2021-01-11"
+        revision.activated_at = revision.activated_at or datetime.utcnow()
+    workflow = get_or_create_issue_workflow(session, issue)
+    workflow.priority = "high"
+    workflow.expected_condition = (
+        "Garage GFCI outlet box at least 18 inches off the floor per E1.1 Note 3."
+    )
+    workflow.difference = "Observed centerline is 12 inches AFF, 6 inches below the minimum."
+    workflow.recommended_route = "rfi"
+    workflow.evidence_gaps_json = []
+    workflow.source_snapshot_json = source_snapshot_for_issue(session, issue)
+    workflow.source_status = "current" if workflow.source_snapshot_json else "unresolved"
+    workflow.review_status = "review_ready"
+    workflow.impact_json = {
+        "scope": "Potential garage GFCI box relocation before gypsum close-in",
+        "schedule": "Verify before 2026-07-11 wall close-in",
+    }
+    for media, evidence, spec in records:
+        link = session.scalar(
+            select(EvidenceLink).where(
+                EvidenceLink.evidence_id == evidence.evidence_id,
+                EvidenceLink.issue_id == issue.issue_id,
+            )
+        )
+        if not link:
+            session.add(
+                EvidenceLink(
+                    evidence_id=evidence.evidence_id,
+                    issue_id=issue.issue_id,
+                    relevance="supports",
+                    annotation=str(spec["label"]),
+                    linked_by="pilot_seed",
+                )
+            )
+        if not any(
+            item.evidence_type == "field_evidence" and item.ref_id == evidence.evidence_id
+            for item in list(issue.evidence or [])
+        ):
+            issue.evidence.append(
+                IssueEvidence(
+                    evidence_type="field_evidence",
+                    ref_id=evidence.evidence_id,
+                    r2_key=media.r2_key,
+                    page=0,
+                    bbox=[],
+                    frame_ts=0,
+                    label=str(spec["label"]),
+                )
+            )
+        evidence.status = "linked"
+    session.commit()
+
+
+def _ensure_pilot_spatial_current(project: Project, session: Session) -> None:
+    graphs = list(
+        session.scalars(
+            select(PlanGraph)
+            .where(PlanGraph.project_id == project.project_id)
+            .order_by(PlanGraph.created_at.desc())
+        ).all()
+    )
+    graph = next((item for item in graphs if plan_graph_is_current(session, item)), None)
+    assets = list(
+        session.scalars(
+            select(SpatialAsset).where(
+                SpatialAsset.project_id == project.project_id,
+                SpatialAsset.type == "design_glb",
+            )
+        ).all()
+    )
+    if graph and any(spatial_asset_is_current(session, asset) for asset in assets):
+        return
+    if not graph:
+        session.execute(
+            delete(SpatialAsset).where(
+                SpatialAsset.project_id == project.project_id,
+                SpatialAsset.type == "design_glb",
+            )
+        )
+        session.execute(delete(PlanGraph).where(PlanGraph.project_id == project.project_id))
+        session.flush()
+        document = session.scalar(
+            select(Document).where(
+                Document.project_id == project.project_id,
+                Document.type == "plan",
+            )
+        )
+        has_sheet = (
+            session.scalar(select(Sheet.sheet_id).where(Sheet.doc_id == document.doc_id).limit(1))
+            if document
+            else None
+        )
+        if not document or not has_sheet:
+            session.commit()
+            return
+        graph = create_plan_graph_record(
+            session,
+            project,
+            source_doc_id=document.doc_id,
+            replace_existing=True,
+        )
+    session.execute(
+        delete(SpatialAsset).where(
+            SpatialAsset.project_id == project.project_id,
+            SpatialAsset.type == "design_glb",
+        )
+    )
+    asset_id = new_id("spa")
+    uri, metadata = build_design_glb(graph.graph_json or {}, project.project_id, asset_id)
+    session.add(
+        SpatialAsset(
+            id=asset_id,
+            project_id=project.project_id,
+            type="design_glb",
+            uri=uri,
+            metadata_json={
+                **metadata,
+                "plan_graph_id": graph.id,
+                **plan_graph_provenance(graph),
+            },
+        )
+    )
+    session.commit()
+
+
 def _chunk_text(text: str, page_no: int) -> list[tuple[str, dict[str, Any]]]:
     sentences = re.split(r"(?<=[.!?])\s+|\n+", text)
     chunks: list[tuple[str, dict[str, Any]]] = []
@@ -441,7 +906,8 @@ def _build_issue(
     }[issue_type]
     rfi = (
         f"Please confirm whether the requirement in {requirement.get('source', 'the contract documents')} "
-        f"applies to {room}. Field evidence says: {observation.get('text', 'not enough evidence')}."
+        f"applies to {room}; field evidence says: "
+        f"{observation.get('text', 'not enough evidence')}?"
     )
     return Issue(
         project_id=project_id,
@@ -651,45 +1117,54 @@ def _issue_candidates(project: Project, session: Session) -> list[Issue]:
 
 
 def ensure_demo_project(session: Session) -> Project:
-    project = session.scalars(select(Project).limit(1)).first()
-    if project:
-        _ensure_demo_assets(project, session)
-        if not session.scalars(select(Issue).where(Issue.project_id == project.project_id).limit(1)).first():
-            job = create_job_for_project(project, session)
-            run_analysis_job(job.job_id, session)
-        return project
+    from .config import get_settings
 
-    from .models import Organization
-
-    org = Organization(name="Buili Pilot")
-    session.add(org)
-    session.flush()
-    project = Project(
-        org_id=org.org_id,
-        name="Tenant Improvement Pilot",
-        address="203 Market St, San Francisco, CA",
-        project_type="tenant_improvement",
+    settings = get_settings()
+    org = session.scalar(select(Organization).where(Organization.name == settings.pilot_org_name))
+    if not org:
+        org = Organization(name=settings.pilot_org_name)
+        session.add(org)
+        session.flush()
+    project = session.scalar(
+        select(Project).where(
+            Project.org_id == org.org_id,
+            Project.name == settings.pilot_project_name,
+        )
     )
-    session.add(project)
-    session.flush()
-    doc = Document(
-        project_id=project.project_id,
-        type="plan",
-        filename="cooper-residence-e11-electrical-plan.txt",
-        mime="text/plain",
-        r2_key=f"org/{org.org_id}/project/{project.project_id}/raw/demo-electrical-plan.txt",
-        hash=_hash_json({"demo": True}),
-        revision="E1.1",
-        parsed_status="uploaded",
-        size=len(_demo_plan_text()),
-    )
-    path = object_path(doc.r2_key)
-    path.write_text(_demo_plan_text(), encoding="utf-8")
-    session.add(doc)
+    if not project:
+        project = session.scalar(
+            select(Project).where(
+                Project.org_id == org.org_id,
+                Project.name.in_(
+                    [
+                        "Riverside Medical Center — Level 02 Renovation",
+                        "North Valley Medical Center — Level 02 Electrical Renovation",
+                    ]
+                ),
+            )
+        )
+        if project:
+            project.name = settings.pilot_project_name
+    if not project:
+        project = Project(
+            org_id=org.org_id,
+            name=settings.pilot_project_name,
+            address="305 W. Shangri-La, Toquerville, UT 84774",
+            project_type="residential_electrical",
+        )
+        session.add(project)
+        session.flush()
+    else:
+        project.address = "305 W. Shangri-La, Toquerville, UT 84774"
+        project.project_type = "residential_electrical"
+    _ensure_pilot_plan(project, session)
+    records = _ensure_pilot_media(project, session)
     session.commit()
-    _ensure_demo_assets(project, session)
-    job = create_job_for_project(project, session)
-    run_analysis_job(job.job_id, session)
+    if not session.scalars(select(Issue).where(Issue.project_id == project.project_id).limit(1)).first():
+        job = create_job_for_project(project, session)
+        run_analysis_job(job.job_id, session)
+    _link_pilot_evidence(project, records, session)
+    _ensure_pilot_spatial_current(project, session)
     return project
 
 
@@ -837,7 +1312,11 @@ def run_analysis_job(job_id: str, session: Session) -> None:
             project_id=project.project_id,
             type="design_glb",
             uri=design_uri,
-            metadata_json={**design_metadata, "plan_graph_id": plan_graph.id},
+            metadata_json={
+                **design_metadata,
+                "plan_graph_id": plan_graph.id,
+                **plan_graph_provenance(plan_graph),
+            },
         )
         session.add(design_asset)
         field_asset = None

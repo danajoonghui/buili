@@ -8,6 +8,9 @@ dependencies:
       - fastapi
       - uvicorn[standard]
       - sqlalchemy
+      - psycopg[binary]
+      - redis
+      - boto3
       - pydantic-settings
       - python-multipart
       - aiofiles
@@ -16,6 +19,9 @@ dependencies:
       - pymupdf
       - pillow
       - opencv-python-headless
+      - shapely
+      - trimesh
+      - easyocr
       - numpy
       - pandas
       - scikit-learn
@@ -29,6 +35,9 @@ dependencies:
       - qwen-vl-utils
       - sentence-transformers
       - safetensors
+      - requests
+      - remotezip
+      - ultralytics
       - tqdm
       - pytest
       - ruff

@@ -19,6 +19,11 @@ function copyHeaders(request: Request) {
   headers.delete("host");
   headers.delete("connection");
   headers.delete("content-length");
+  // Identity is established by the API from the signed HttpOnly session. Never
+  // let a browser manufacture the legacy actor/role headers at this trust edge.
+  for (const name of Array.from(headers.keys())) {
+    if (name.toLowerCase().startsWith("x-buili-")) headers.delete(name);
+  }
   return headers;
 }
 
@@ -41,13 +46,20 @@ async function proxy(request: Request, context: RouteContext) {
     cache: "no-store"
   };
 
-  if (!["GET", "HEAD"].includes(request.method)) {
-    init.body = request.body;
-    init.duplex = "half";
+  if (!["GET", "HEAD"].includes(request.method) && request.body) {
+    // Small JSON mutations are buffered to avoid reusing the framework-owned
+    // request stream after an upstream fast-fail (for example a 401 login).
+    // Multipart evidence uploads remain streamed end-to-end.
+    if (request.headers.get("content-type")?.includes("application/json")) {
+      init.body = await request.arrayBuffer();
+    } else {
+      init.body = request.body;
+      init.duplex = "half";
+    }
   }
 
   const upstream = await fetch(upstreamUrl, init);
-  return new Response(upstream.body, {
+  return new Response([204, 205, 304].includes(upstream.status) ? null : upstream.body, {
     status: upstream.status,
     statusText: upstream.statusText,
     headers: responseHeaders(upstream)

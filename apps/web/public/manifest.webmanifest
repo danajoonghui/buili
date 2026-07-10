@@ -1,26 +1,27 @@
 {
   "name": "Buili",
   "short_name": "Buili",
-  "description": "Evidence-first construction issue review",
-  "start_url": "/",
+  "description": "Construction verification intelligence for source-backed field evidence, review, and reporting.",
+  "start_url": "/projects",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "background_color": "#f7f8f5",
+  "theme_color": "#174d3b",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/buili_favicon_transparent.png",
-      "sizes": "512x512",
+      "src": "/brand/buili-mark.png",
+      "sizes": "1254x1254",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ],
   "shortcuts": [
     {
-      "name": "Issue inbox",
-      "url": "/",
-      "description": "Open Buili issue review"
+      "name": "Projects",
+      "short_name": "Projects",
+      "url": "/projects",
+      "description": "Open the Buili project workspace"
     }
   ]
 }

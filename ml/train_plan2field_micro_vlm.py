@@ -76,7 +76,7 @@ def evaluate(model: Plan2FieldMicroVLM, loader: DataLoader, device: torch.device
     correct = 0
     positives = 0
     positive_correct = 0
-    bbox_l1 = 0.0
+    bbox_l1_sum = 0.0
     with torch.no_grad():
         for batch in loader:
             images = batch["image"].to(device)
@@ -92,11 +92,12 @@ def evaluate(model: Plan2FieldMicroVLM, loader: DataLoader, device: torch.device
             positives += int(pos_mask.sum().detach().cpu())
             if bool(pos_mask.any()):
                 positive_correct += int((pred[pos_mask] == class_ids[pos_mask]).sum().detach().cpu())
-                bbox_l1 += float(torch.abs(output["box"][pos_mask] - bbox[pos_mask]).mean().detach().cpu())
+                per_sample_l1 = torch.abs(output["box"][pos_mask] - bbox[pos_mask]).mean(dim=1)
+                bbox_l1_sum += float(per_sample_l1.sum().detach().cpu())
     return {
         "class_acc": correct / max(total, 1),
         "positive_class_acc": positive_correct / max(positives, 1),
-        "positive_bbox_l1": bbox_l1 / max(positives, 1),
+        "positive_bbox_l1": bbox_l1_sum / max(positives, 1),
         "samples": total,
         "positive_samples": positives,
     }

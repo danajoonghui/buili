@@ -26,6 +26,29 @@ class Settings(BaseSettings):
     r2_access_key_id: str = ""
     r2_secret_access_key: str = ""
     r2_bucket: str = ""
+    # Local/demo clients may omit identity headers.  Production deployments behind
+    # a trusted OIDC/SAML proxy should set this to true and have the proxy inject
+    # X-Buili-Actor and X-Buili-Role after stripping any client-supplied values.
+    require_auth_headers: bool = False
+    # First-party session authentication.  Render/production must enable this and
+    # provide a random secret of at least 32 characters.
+    auth_required: bool = False
+    auth_secret: str = ""
+    secure_cookies: bool = False
+    session_hours: int = 12
+    remember_session_days: int = 30
+    pilot_seed_enabled: bool = True
+    pilot_email: str = "jordan.davis@northstarbuild.example"
+    pilot_password: str = ""
+    pilot_name: str = "Jordan Davis"
+    pilot_org_name: str = "Northstar Builders"
+    pilot_project_name: str = "Cooper Residence — Electrical Rough-In Verification"
+
+    @property
+    def session_secret(self) -> str:
+        # Development remains zero-config while production fails closed in the
+        # lifespan validator before accepting authenticated traffic.
+        return self.auth_secret or "buili-local-session-secret-not-for-production"
 
     @property
     def cors_allow_origins(self) -> list[str]:

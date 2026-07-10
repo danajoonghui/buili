@@ -8,26 +8,41 @@ from pathlib import Path
 import uvicorn
 from fastapi import BackgroundTasks, Depends, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session, selectinload
 
+from .auth import (
+    bind_principal,
+    ensure_pilot_identity,
+    request_path_requires_auth,
+    reset_principal,
+    resolve_request_principal,
+    validate_production_auth_settings,
+)
+from .auth import (
+    router as auth_router,
+)
 from .config import get_settings
 from .database import SessionLocal, get_session, init_db
 from .gpu import force_gpu_7, gpu_policy
 from .models import (
     Document,
+    DocumentRevision,
     Frame,
     Issue,
     Job,
     Observation,
     PlanGraph,
     Project,
+    ReportRecord,
+    ReportScope,
+    ReportVersion,
     SiteMedia,
-    SpecChunk,
     SpatialAsset,
     SpatialEvidence,
+    SpecChunk,
     UploadIntent,
     new_id,
 )
@@ -60,6 +75,21 @@ from .schemas import (
 )
 from .spatial.router import router as spatial_router
 from .storage import file_sha256, object_path, save_upload
+from .workflow_router import ensure_project_revisions, issue_detail, refresh_review_readiness
+from .workflow_router import router as workflow_router
+from .workflows import (
+    EDIT_ROLES,
+    actor_context,
+    get_or_create_issue_workflow,
+    get_or_create_project_profile,
+    issue_action_blockers,
+    issue_snapshot,
+    project_snapshot,
+    record_audit,
+    require_role,
+    sha256_path,
+    source_snapshot_for_issue,
+)
 
 force_gpu_7()
 settings = get_settings()
@@ -115,9 +145,17 @@ def _validate_upload_request(filename: str, mime: str, size: int, kind: str) -> 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    validate_production_auth_settings()
     init_db()
     with SessionLocal() as session:
-        ensure_demo_project(session)
+        pilot_project = ensure_demo_project(session)
+        ensure_pilot_identity(session, pilot_project)
+        # Backfill additive revision records once at startup. This keeps legacy
+        # databases compatible and prevents concurrent first-page reads from
+        # racing to create the same revision row.
+        for project_id in session.scalars(select(Project.project_id)).all():
+            ensure_project_revisions(session, project_id)
+        session.commit()
     yield
 
 
@@ -143,7 +181,9 @@ if (WEB_PUBLIC_ROOT / "plan2field3d").exists():
         name="plan2field3d",
     )
 
+app.include_router(auth_router)
 app.include_router(spatial_router)
+app.include_router(workflow_router)
 init_db()
 
 
@@ -152,6 +192,40 @@ async def accept_api_prefix(request: Request, call_next):
     if request.scope["path"].startswith("/api/"):
         request.scope["path"] = request.scope["path"][4:]
     return await call_next(request)
+
+
+@app.middleware("http")
+async def authenticate_and_scope_request(request: Request, call_next):
+    principal = resolve_request_principal(request)
+    if settings.auth_required and request_path_requires_auth(request.scope["path"]) and not principal:
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "authentication required"},
+            headers={"Cache-Control": "no-store"},
+        )
+    if settings.auth_required and request.method.upper() in {
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+    }:
+        origin = request.headers.get("origin", "").rstrip("/")
+        allowed = {item.rstrip("/") for item in settings.cors_allow_origins}
+        if origin and "*" not in allowed and origin not in allowed:
+            return JSONResponse(
+                status_code=403,
+                content={"detail": "request origin is not allowed"},
+                headers={"Cache-Control": "no-store"},
+            )
+    request.state.principal = principal
+    token = bind_principal(principal)
+    try:
+        response = await call_next(request)
+        if request_path_requires_auth(request.scope["path"]):
+            response.headers.setdefault("Cache-Control", "private, no-store")
+        return response
+    finally:
+        reset_principal(token)
 
 
 @app.get("/", include_in_schema=False)
@@ -184,6 +258,17 @@ def icon_svg() -> FileResponse:
 @app.get("/healthz")
 def healthz() -> dict[str, object]:
     return {"status": "ok", "service": "buili-api", "gpu": gpu_policy()}
+
+
+@app.get("/readyz")
+def readyz(session: Session = Depends(get_session)) -> dict[str, object]:
+    try:
+        session.execute(text("SELECT 1"))
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="database is not ready") from exc
+    if not settings.storage_root.exists() or not settings.storage_root.is_dir():
+        raise HTTPException(status_code=503, detail="object storage is not ready")
+    return {"status": "ready", "service": "buili-api", "database": "ok", "storage": "ok"}
 
 
 def _read_artifact_json(path: Path) -> dict[str, object] | None:
@@ -285,14 +370,28 @@ def list_projects(session: Session = Depends(get_session)) -> list[Project]:
 
 @app.post("/v1/projects", response_model=ProjectOut)
 def create_project(payload: ProjectCreate, session: Session = Depends(get_session)) -> Project:
+    from .auth import current_principal
+
+    principal = current_principal()
     demo = ensure_demo_project(session)
     project = Project(
-        org_id=demo.org_id,
+        org_id=principal.org_id if principal else demo.org_id,
         name=payload.name,
         address=payload.address,
         project_type=payload.project_type,
     )
     session.add(project)
+    session.flush()
+    get_or_create_project_profile(session, project.project_id)
+    record_audit(
+        session,
+        project=project,
+        actor="system",
+        action="PROJECT_CREATED",
+        entity_type="project",
+        entity_id=project.project_id,
+        after=project_snapshot(project, get_or_create_project_profile(session, project.project_id)),
+    )
     session.commit()
     session.refresh(project)
     return project
@@ -357,8 +456,11 @@ async def upload_file(
 def complete_upload(
     upload_id: str,
     payload: UploadCompleteRequest,
+    request: Request,
     session: Session = Depends(get_session),
 ) -> dict[str, str]:
+    actor, role = actor_context(request)
+    require_role(role, EDIT_ROLES, "complete uploads")
     intent = session.get(UploadIntent, upload_id)
     if not intent:
         raise HTTPException(status_code=404, detail="upload intent not found")
@@ -381,7 +483,34 @@ def complete_upload(
             size=intent.size,
         )
         session.add(doc)
+        session.flush()
+        revision_state = DocumentRevision(
+            document_id=doc.doc_id,
+            project_id=doc.project_id,
+            logical_key=f"{doc.type}:{Path(doc.filename).stem.lower()}",
+            revision=doc.revision,
+            state="unclassified",
+            source_hash=doc.hash,
+            upload_actor=actor,
+        )
+        session.add(revision_state)
         intent.status = "completed"
+        project = session.get(Project, doc.project_id)
+        record_audit(
+            session,
+            project=project,
+            actor=actor,
+            action="FILE_UPLOADED",
+            entity_type="document",
+            entity_id=doc.doc_id,
+            after={
+                "filename": doc.filename,
+                "hash": doc.hash,
+                "document_type": doc.type,
+                "revision": doc.revision,
+                "revision_state": "unclassified",
+            },
+        )
         session.commit()
         return {"status": "completed", "document_id": doc.doc_id}
 
@@ -395,6 +524,17 @@ def complete_upload(
     )
     session.add(media)
     intent.status = "completed"
+    session.flush()
+    project = session.get(Project, media.project_id)
+    record_audit(
+        session,
+        project=project,
+        actor=actor,
+        action="FILE_UPLOADED",
+        entity_type="site_media",
+        entity_id=media.media_id,
+        after={"filename": media.filename, "hash": media.hash, "mime": media.mime},
+    )
     session.commit()
     return {"status": "completed", "media_id": media.media_id}
 
@@ -409,6 +549,8 @@ def analyze_project(
     project = session.get(Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="project not found")
+    ensure_project_revisions(session, project_id)
+    session.commit()
     job = create_job_for_project(project, session)
     background_tasks.add_task(_run_job_task, job.job_id)
     return job
@@ -439,29 +581,95 @@ def latest_project_job(project_id: str, session: Session = Depends(get_session))
 
 
 @app.get("/v1/projects/{project_id}/documents", response_model=list[DocumentOut])
-def list_documents(project_id: str, session: Session = Depends(get_session)) -> list[Document]:
+def list_documents(project_id: str, session: Session = Depends(get_session)) -> list[dict[str, object]]:
     if not session.get(Project, project_id):
         raise HTTPException(status_code=404, detail="project not found")
-    return list(
+    documents = list(
         session.scalars(
             select(Document)
             .where(Document.project_id == project_id)
             .order_by(Document.created_at.desc())
         ).all()
     )
+    revision_by_document = {
+        revision.document_id: revision
+        for _, revision in ensure_project_revisions(session, project_id)
+    }
+    session.commit()
+    return [
+        {
+            "doc_id": item.doc_id,
+            "project_id": item.project_id,
+            "type": item.type,
+            "filename": item.filename,
+            "mime": item.mime,
+            "r2_key": item.r2_key,
+            "hash": item.hash,
+            "revision": item.revision,
+            "parsed_status": item.parsed_status,
+            "size": item.size,
+            "metadata_json": dict(item.metadata_json or {}),
+            "is_current": revision_by_document[item.doc_id].state == "current",
+            "revision_state": revision_by_document[item.doc_id].state,
+            "issue_date": revision_by_document[item.doc_id].issue_date,
+        }
+        for item in documents
+    ]
 
 
 @app.get("/v1/projects/{project_id}/media", response_model=list[SiteMediaOut])
-def list_media(project_id: str, session: Session = Depends(get_session)) -> list[SiteMedia]:
+def list_media(project_id: str, session: Session = Depends(get_session)) -> list[dict[str, object]]:
     if not session.get(Project, project_id):
         raise HTTPException(status_code=404, detail="project not found")
-    return list(
+    items = list(
         session.scalars(
             select(SiteMedia)
             .where(SiteMedia.project_id == project_id)
             .order_by(SiteMedia.created_at.desc())
         ).all()
     )
+    return [
+        {
+            "media_id": item.media_id,
+            "project_id": item.project_id,
+            "filename": item.filename,
+            "mime": item.mime,
+            "r2_key": item.r2_key,
+            "hash": item.hash,
+            "metadata_json": dict(item.metadata_json or {}),
+            "download_url": f"{settings.public_base_url}/v1/media/{item.media_id}/download",
+        }
+        for item in items
+    ]
+
+
+@app.get("/v1/media/{media_id}/download")
+def download_media(media_id: str, session: Session = Depends(get_session)) -> FileResponse:
+    media = session.get(SiteMedia, media_id)
+    if not media:
+        raise HTTPException(status_code=404, detail="media not found")
+    if media.r2_key.startswith("asset://site-media/"):
+        relative_name = Path(media.r2_key.removeprefix("asset://site-media/")).name
+        path = (WEB_PUBLIC_ROOT / "site-media" / relative_name).resolve()
+        allowed_root = (WEB_PUBLIC_ROOT / "site-media").resolve()
+    else:
+        path = object_path(media.r2_key).resolve()
+        allowed_root = settings.storage_root.resolve()
+    try:
+        path.relative_to(allowed_root)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="media not found") from exc
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="media file is missing")
+    response = FileResponse(
+        path,
+        media_type=media.mime or "application/octet-stream",
+        filename=Path(media.filename).name or media.media_id,
+        content_disposition_type="inline",
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 @app.get("/v1/projects/{project_id}/observations", response_model=list[ObservationOut])
@@ -588,31 +796,76 @@ def technology_status(
 
 
 @app.get("/v1/projects/{project_id}/issues", response_model=list[IssueOut])
-def list_issues(project_id: str, session: Session = Depends(get_session)) -> list[Issue]:
+def list_issues(project_id: str, session: Session = Depends(get_session)) -> list[dict[str, object]]:
+    if not session.get(Project, project_id):
+        raise HTTPException(status_code=404, detail="project not found")
     issues = session.scalars(
         select(Issue)
         .options(selectinload(Issue.evidence))
         .where(Issue.project_id == project_id)
         .order_by(Issue.confidence.desc())
     ).all()
-    return list(issues)
+    payload = [issue_detail(session, issue) for issue in issues]
+    session.commit()
+    return payload
 
 
 @app.patch("/v1/issues/{issue_id}", response_model=IssueOut)
 def update_issue(
-    issue_id: str, payload: IssuePatch, session: Session = Depends(get_session)
-) -> Issue:
+    issue_id: str,
+    payload: IssuePatch,
+    request: Request,
+    session: Session = Depends(get_session),
+) -> dict[str, object]:
+    actor, role = actor_context(request)
+    require_role(role, EDIT_ROLES, "edit issues")
     issue = session.scalar(
         select(Issue).options(selectinload(Issue.evidence)).where(Issue.issue_id == issue_id)
     )
     if not issue:
         raise HTTPException(status_code=404, detail="issue not found")
-    for key, value in payload.model_dump(exclude_unset=True).items():
+    workflow = get_or_create_issue_workflow(session, issue)
+    before = issue_snapshot(issue, workflow)
+    values = payload.model_dump(exclude_unset=True)
+    if values.get("status") in {"approved", "issued", "closed"}:
+        raise HTTPException(
+            status_code=409,
+            detail="approved, issued, and closed states require the review/action workflow",
+        )
+    workflow_fields = {
+        "priority": "priority",
+        "expected_condition": "expected_condition",
+        "difference": "difference",
+        "recommended_route": "recommended_route",
+        "evidence_gaps": "evidence_gaps_json",
+        "source_status": "source_status",
+        "impact": "impact_json",
+    }
+    for key, value in values.items():
         if value is not None:
-            setattr(issue, key, value)
+            if key in workflow_fields:
+                setattr(workflow, workflow_fields[key], value)
+            else:
+                setattr(issue, key, value)
+    workflow.version += 1
+    if workflow.review_status == "approved":
+        workflow.review_status = "review_ready"
+        workflow.reviewer = ""
+        issue.status = "review_ready"
+    project = session.get(Project, issue.project_id)
+    record_audit(
+        session,
+        project=project,
+        actor=actor,
+        action="ISSUE_EDITED",
+        entity_type="issue",
+        entity_id=issue.issue_id,
+        before=before,
+        after=issue_snapshot(issue, workflow),
+    )
     session.commit()
     session.refresh(issue)
-    return issue
+    return issue_detail(session, issue)
 
 
 @app.post("/v1/issues/{issue_id}/rfi", response_model=RfiOut)
@@ -620,33 +873,164 @@ def create_rfi(issue_id: str, session: Session = Depends(get_session)) -> RfiOut
     issue = session.get(Issue, issue_id)
     if not issue:
         raise HTTPException(status_code=404, detail="issue not found")
-    return RfiOut(issue_id=issue.issue_id, title=issue.title, markdown=build_markdown_rfi(issue))
+    workflow = get_or_create_issue_workflow(session, issue)
+    refresh_review_readiness(session, issue, workflow)
+    blockers = issue_action_blockers(
+        session,
+        issue,
+        workflow,
+        report_type="rfi",
+        require_approval=True,
+    )
+    session.commit()
+    return RfiOut(
+        issue_id=issue.issue_id,
+        title=issue.title,
+        markdown=build_markdown_rfi(
+            issue,
+            sources=list(workflow.source_snapshot_json or []),
+            impact=dict(workflow.impact_json or {}),
+        ),
+        readiness={"can_issue": not blockers, "blockers": blockers},
+    )
 
 
 @app.post("/v1/projects/{project_id}/reports", response_model=ReportOut)
 def create_report(
     project_id: str,
     payload: ReportRequest,
+    request: Request,
     session: Session = Depends(get_session),
 ) -> ReportOut:
+    actor, role = actor_context(request)
+    require_role(role, EDIT_ROLES, "create report drafts")
+    selected_issue_ids = list(dict.fromkeys(payload.issue_ids or [])) if payload.issue_ids else None
     try:
-        report_id, path = build_report(session, project_id, payload.report_type, payload.format)
+        report_id, path = build_report(
+            session,
+            project_id,
+            payload.report_type,
+            payload.format,
+            issue_ids=selected_issue_ids,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    rel = path.relative_to(settings.storage_root / "reports")
+    reports_root = (settings.storage_root / "reports").resolve()
+    try:
+        rel = path.resolve().relative_to(reports_root)
+    except ValueError as exc:
+        raise HTTPException(status_code=500, detail="report path escaped storage root") from exc
+    issue_statement = (
+        select(Issue)
+        .options(selectinload(Issue.evidence), selectinload(Issue.spatial_evidence))
+        .where(Issue.project_id == project_id)
+    )
+    if selected_issue_ids is not None:
+        issue_statement = issue_statement.where(Issue.issue_id.in_(selected_issue_ids))
+    issues = list(session.scalars(issue_statement.order_by(Issue.confidence.desc())).all())
+    if selected_issue_ids is not None:
+        issue_by_id = {issue.issue_id: issue for issue in issues}
+        issues = [issue_by_id[issue_id] for issue_id in selected_issue_ids]
+    snapshots = []
+    readiness: list[dict[str, object]] = []
+    source_snapshots: dict[tuple[str, str], dict[str, object]] = {}
+    for issue in issues:
+        workflow = get_or_create_issue_workflow(session, issue)
+        refresh_review_readiness(session, issue, workflow)
+        current_sources = source_snapshot_for_issue(session, issue)
+        workflow.source_snapshot_json = current_sources
+        snapshots.append(issue_snapshot(issue, workflow))
+        blockers = issue_action_blockers(
+            session,
+            issue,
+            workflow,
+            report_type=payload.report_type,
+            require_approval=True,
+        )
+        readiness.append(
+            {
+                "issue_id": issue.issue_id,
+                "title": issue.title,
+                "can_issue": not blockers,
+                "blockers": blockers,
+            }
+        )
+        for source in current_sources:
+            source_snapshots[(str(source.get("document_id")), str(source.get("revision")))] = source
+    report = ReportRecord(
+        report_id=report_id,
+        project_id=project_id,
+        report_type=payload.report_type,
+        title=f"{payload.report_type.replace('_', ' ').title()} draft",
+        status="draft",
+        created_by=actor,
+    )
+    version = ReportVersion(
+        report_id=report_id,
+        version=1,
+        format=payload.format,
+        path=str(path.resolve()),
+        checksum=sha256_path(path),
+        source_snapshot_json=list(source_snapshots.values()),
+        issue_snapshot_json=snapshots,
+        status="draft",
+        created_by=actor,
+    )
+    scope = ReportScope(
+        report_id=report_id,
+        issue_ids_json=[issue.issue_id for issue in issues],
+        explicit_selection=1 if selected_issue_ids is not None else 0,
+    )
+    session.add_all([report, version, scope])
+    project = session.get(Project, project_id)
+    record_audit(
+        session,
+        project=project,
+        actor=actor,
+        action="REPORT_DRAFT_CREATED",
+        entity_type="report",
+        entity_id=report_id,
+        after={
+            "version": 1,
+            "format": payload.format,
+            "checksum": version.checksum,
+            "source_snapshot": version.source_snapshot_json,
+        },
+    )
+    session.commit()
     return ReportOut(
         report_id=report_id,
         report_type=payload.report_type,
         format=payload.format,
         path=str(path),
         download_url=f"{settings.public_base_url}/v1/reports/{rel.as_posix()}",
+        issue_ids=[issue.issue_id for issue in issues],
+        readiness=readiness,
+        can_issue=bool(readiness) and all(bool(item["can_issue"]) for item in readiness),
     )
 
 
 @app.get("/v1/reports/{path:path}")
-def download_report(path: str) -> FileResponse:
-    report_path = settings.storage_root / "reports" / path
-    if not report_path.exists():
+def download_report(path: str, session: Session = Depends(get_session)) -> FileResponse:
+    reports_root = (settings.storage_root / "reports").resolve()
+    report_path = (reports_root / path).resolve()
+    try:
+        report_path.relative_to(reports_root)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="report not found") from exc
+    if not report_path.is_file():
+        raise HTTPException(status_code=404, detail="report not found")
+    # ReportRecord is tenant-scoped by the authenticated-session query policy.
+    # Match the artifact through an accessible report rather than trusting an
+    # otherwise guessable storage path.
+    accessible_report_ids = select(ReportRecord.report_id)
+    version = session.scalar(
+        select(ReportVersion).where(
+            ReportVersion.report_id.in_(accessible_report_ids),
+            ReportVersion.path == str(report_path),
+        )
+    )
+    if not version:
         raise HTTPException(status_code=404, detail="report not found")
     return FileResponse(report_path)
 
@@ -662,11 +1046,20 @@ def get_overlay(project_id: str, session: Session = Depends(get_session)) -> dic
 def rag_search(
     project_id: str, q: str, session: Session = Depends(get_session)
 ) -> dict[str, object]:
+    if not session.get(Project, project_id):
+        raise HTTPException(status_code=404, detail="project not found")
+    revision_rows = ensure_project_revisions(session, project_id)
+    current_doc_ids = {
+        document.doc_id for document, revision in revision_rows if revision.state == "current"
+    }
     chunks = session.scalars(
-        select(SpecChunk).join(Document).where(Document.project_id == project_id)
+        select(SpecChunk)
+        .join(Document)
+        .where(Document.project_id == project_id, SpecChunk.doc_id.in_(current_doc_ids))
     ).all()
     result = rag_answer(q, list(chunks), top_k=8)
-    result["filters"] = {"project_id": project_id}
+    result["filters"] = {"project_id": project_id, "revision_scope": "current"}
+    session.commit()
     return result
 
 

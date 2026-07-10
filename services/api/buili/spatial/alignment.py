@@ -7,14 +7,18 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..models import PlanGraph, SpatialAlignment, SpatialAsset
+from .plan_parser import plan_graph_is_current
 
 
 def _latest_plan_graph(session: Session, project_id: str) -> PlanGraph | None:
-    return session.scalar(
-        select(PlanGraph)
-        .where(PlanGraph.project_id == project_id)
-        .order_by(PlanGraph.created_at.desc())
+    graphs = list(
+        session.scalars(
+            select(PlanGraph)
+            .where(PlanGraph.project_id == project_id)
+            .order_by(PlanGraph.created_at.desc())
+        ).all()
     )
+    return next((graph for graph in graphs if plan_graph_is_current(session, graph)), None)
 
 
 def _latest_field_asset(session: Session, project_id: str) -> SpatialAsset | None:
@@ -95,6 +99,8 @@ def create_spatial_alignment(
     )
     if not plan_graph or plan_graph.project_id != project_id:
         raise ValueError("plan graph not found for project")
+    if not plan_graph_is_current(session, plan_graph):
+        raise ValueError("plan graph references a superseded drawing revision")
     field_asset = (
         session.get(SpatialAsset, field_asset_id)
         if field_asset_id

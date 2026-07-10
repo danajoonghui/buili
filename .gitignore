@@ -1,5 +1,7 @@
 .env
 .env.local
+*.env
+!.env.example
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -11,6 +13,25 @@ test-results/
 node_modules/
 dist/
 build/
+tmp/
+/runs/
+/yolo*.pt
+
+# Reproducible evaluation/conversion outputs. Keep authored specifications and
+# the public Cooper E1.1 seed source below.
+/docs/pdf_preview/
+/docs/debug_eval*/
+/docs/tileplandet*/
+/docs/plan2field3d_public_conversion/
+/docs/plan2field3d_house_conversion/
+/docs/plan2field3d_spec_pages/
+/docs/plan2field*_eval*/
+/docs/*
+!/docs/product_spec_implementation_matrix.md
+/data/eval/
+/data/train/
+/data/sources/plan2field3d_house/
+/data/sources/plan2field3d_public/
 data/raw/*
 data/open_corpus/
 data/processed/*
@@ -47,6 +68,11 @@ data/storage/
 !data/artifacts/buili_internvl35_14b_plus_open_lora/training_summary.json
 !data/artifacts/buili_internvl35_14b_plus_open_lora/adapter_manifest.json
 !data/artifacts/buili_internvl35_14b_plus_open_lora/generation_qa.json
+
+# Local specifications and operator notes are not public deployment assets.
+/Buili_Product_Web_Specification_KR.pdf
+/buili_plan2field3d_production_spec.pdf
+/PM_readme (1).md
 *.db
 *.sqlite
 *.sqlite3

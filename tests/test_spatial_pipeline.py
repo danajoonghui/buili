@@ -14,6 +14,7 @@ from services.api.buili.spatial.semantic_auto import (
     evaluate_scene_alignment,
     semantic_scene_to_plan_graph_payload,
 )
+from services.api.buili.spatial.eval_metrics import evaluate_plan_elements
 from services.api.buili.spatial.semantic_scene import (
     SemanticObject,
     SemanticScene,
@@ -22,6 +23,7 @@ from services.api.buili.spatial.semantic_scene import (
     build_maricopa_source_aligned_scene,
     render_semantic_scene,
 )
+from ml.collect_plan2field_eval50 import parse_cubicasa_svg
 
 
 def _upload(
@@ -226,6 +228,55 @@ def test_floorplan_segments_snap_and_merge_without_closing_large_openings() -> N
     assert len(vertical) == 1
     assert vertical[0].start_px == 20
     assert vertical[0].end_px == 260
+
+
+def test_plan2field_eval_metrics_match_objects_openings_and_walls() -> None:
+    ground_truth = {
+        "objects": [{"id": "gt_obj", "kind": "sink", "bbox": [10, 10, 50, 40]}],
+        "openings": [{"id": "gt_door", "kind": "door", "bbox": [100, 20, 160, 42]}],
+        "walls": [{"id": "gt_wall", "segment": [0, 0, 100, 0]}],
+    }
+    prediction = {
+        "objects": [{"id": "pred_obj", "kind": "sink", "bbox": [12, 11, 51, 39]}],
+        "openings": [{"id": "pred_door", "kind": "door", "bbox": [101, 20, 158, 44]}],
+        "walls": [{"id": "pred_wall", "segment": [0, 2, 100, 2]}],
+    }
+
+    metrics = evaluate_plan_elements(prediction, ground_truth)
+
+    assert metrics["objects"]["true_positive"] == 1
+    assert metrics["openings"]["true_positive"] == 1
+    assert metrics["walls"]["true_positive"] == 1
+
+
+def test_cubicasa_svg_parser_extracts_wall_opening_and_object(tmp_path) -> None:
+    svg = tmp_path / "model.svg"
+    svg.write_text(
+        """<?xml version="1.0"?>
+<svg width="200" height="120" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+  <g id="Wall" class="Wall External">
+    <polygon points="10,10 190,10 190,20 10,20"/>
+    <g id="Door" class="Door Swing Beside">
+      <polygon points="60,10 90,10 90,20 60,20"/>
+    </g>
+    <g id="Window" class="Window Regular">
+      <polygon points="120,10 160,10 160,20 120,20"/>
+    </g>
+  </g>
+  <g class="FixedFurniture Sink" transform="matrix(1,0,0,1,40,50)">
+    <g class="BoundaryPolygon"><polygon points="0,0 30,0 30,20 0,20"/></g>
+  </g>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    parsed = parse_cubicasa_svg(svg)
+
+    assert parsed["counts"]["walls"] == 1
+    assert parsed["counts"]["openings"] == 2
+    assert parsed["counts"]["objects"] == 1
+    assert parsed["objects"][0]["kind"] == "sink"
 
 
 def test_source_aligned_semantic_scene_renders_visible_3d_preview(tmp_path) -> None:
